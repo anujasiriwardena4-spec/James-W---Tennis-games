@@ -103,3 +103,30 @@ replaced only when that event comes round again.
 
 Unofficial fan project, not affiliated with any tour, event or player. Ratings are one
 person's opinion expressed as numbers, and no more than that.
+
+## Getting the site into search results
+
+Being deployed is not the same as being indexed. The markup is already in place —
+canonical URL, Open Graph, Twitter cards, `VideoGame` JSON-LD, `robots.txt`,
+`sitemap.xml`, and a crawlable text footer describing the game. What is missing is
+*discovery*: search engines have no reason to visit a brand-new URL that nothing
+links to.
+
+**Google** — the only path is Google Search Console. Verify ownership of
+`baseline-tennis-tau.vercel.app`, submit `sitemap.xml`, then use the URL Inspection
+tool on `https://baseline-tennis-tau.vercel.app/` and press *Request Indexing*.
+Expect days to weeks, not minutes.
+
+**Bing / DuckDuckGo / Yahoo / Ecosia** — these accept IndexNow, which needs no
+account. The key file `7887e9d8bc6f10bdf4380920d4363287.txt` is served from the site
+root, so opening this URL in a browser submits the page:
+
+```
+https://api.indexnow.org/indexnow?url=https://baseline-tennis-tau.vercel.app/&key=7887e9d8bc6f10bdf4380920d4363287
+```
+
+A `200` or `202` response means it was accepted.
+
+**Inbound links matter more than either.** One link from a page that already gets
+crawled — a Reddit post, a Discord with link previews on, a school page, a YouTube
+description — is what usually triggers first discovery.
