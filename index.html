@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BASELINE — Build a Tennis Player</title>
+<meta name="description" content="Spin the wheel, steal one skill from each legend, then take your player through a full tennis season of Grand Slams and Masters 1000s.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='%23d4ff3f'/><path d='M14 22a52 52 0 0 1 0 56M86 22a52 52 0 0 0 0 56' stroke='%230a0f14' stroke-width='6' fill='none'/></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ================= HOME ================= -->
+  <section class="screen active" id="screen-home">
+    <div class="home-wrap">
+      <div class="home-mark">
+        <span class="ball"></span>
+        <h1>BASELINE</h1>
+      </div>
+      <p class="tagline">Spin the wheel. Steal one skill from each name that comes up.
+        Then find out how far that player gets on tour.</p>
+
+      <div class="home-actions">
+        <button class="btn btn-primary btn-lg" id="btn-new">Build a player</button>
+        <button class="btn btn-ghost btn-lg" id="btn-continue" hidden>Continue career</button>
+      </div>
+
+      <div class="home-rules">
+        <div class="rule">
+          <span class="rule-n">01</span>
+          <h3>Eight skills, eight different players</h3>
+          <p>The wheel lands on someone. Take exactly one of their eight ratings — Sinner's backhand,
+             Isner's serve, Nadal's stamina — and they're gone from the pool for good.</p>
+        </div>
+        <div class="rule">
+          <span class="rule-n">02</span>
+          <h3>Three respins, that's it</h3>
+          <p>Don't like who came up? Respin. You get three all game, so burning one on a
+             journeyman to chase a legend is a real gamble.</p>
+        </div>
+        <div class="rule">
+          <span class="rule-n">03</span>
+          <h3>Then you actually have to play</h3>
+          <p>Four Grand Slams, nine Masters 1000s, the Tour Finals. Qualifying if you're
+             ranked too low, points that roll off 52 weeks later, injuries if you flog yourself.</p>
+        </div>
+      </div>
+      <p class="footnote">Unofficial fan project. Ratings are opinion, not endorsement.</p>
+    </div>
+  </section>
+
+  <!-- ================= IDENTITY ================= -->
+  <section class="screen" id="screen-identity">
+    <div class="panel narrow">
+      <h2 class="screen-title">Who are you?</h2>
+      <div class="form-grid">
+        <label class="field">
+          <span>Name</span>
+          <input type="text" id="in-name" maxlength="22" placeholder="Your player" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Country</span>
+          <select id="in-country"></select>
+        </label>
+        <label class="field">
+          <span>Age</span>
+          <select id="in-age"></select>
+        </label>
+        <div class="field">
+          <span>Playing hand</span>
+          <div class="seg" id="seg-hand">
+            <button class="seg-btn active" data-v="R">Right</button>
+            <button class="seg-btn" data-v="L">Left</button>
+          </div>
+        </div>
+        <div class="field">
+          <span>Backhand</span>
+          <div class="seg" id="seg-bh">
+            <button class="seg-btn active" data-v="2">Two-handed</button>
+            <button class="seg-btn" data-v="1">One-handed</button>
+          </div>
+        </div>
+      </div>
+      <div class="row-end">
+        <button class="btn btn-ghost" data-goto="screen-home">Back</button>
+        <button class="btn btn-primary" id="btn-to-builder">To the wheel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BUILDER ================= -->
+  <section class="screen" id="screen-builder">
+    <div class="builder">
+      <div class="builder-left">
+        <div class="builder-head">
+          <h2 class="screen-title">Take one skill</h2>
+          <div class="respins" id="respin-pips" title="Respins remaining"></div>
+        </div>
+        <div class="spin-stage" id="spin-stage">
+          <div class="spin-empty" id="spin-empty">
+            <p>Eight slots. Eight different players. Pick the skill you want off each one.</p>
+            <button class="btn btn-primary btn-lg" id="btn-spin">Spin</button>
+          </div>
+          <div class="spin-card" id="spin-card" hidden>
+            <div class="spin-card-top">
+              <span class="tier-tag" id="card-tier">legend</span>
+              <h3 id="card-name">—</h3>
+              <span class="card-country" id="card-country"></span>
+              <p class="card-sig" id="card-sig"></p>
+            </div>
+            <div class="attr-choices" id="attr-choices"></div>
+            <div class="spin-card-actions">
+              <button class="btn btn-ghost" id="btn-respin">Respin <span id="respin-count">(3)</span></button>
+              <span class="hint">Pick a rating above to lock it in</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="builder-right">
+        <h3 class="side-title">Your build</h3>
+        <ul class="slot-list" id="slot-list"></ul>
+        <div class="ovr-preview">
+          <span>Overall</span>
+          <strong id="ovr-preview">—</strong>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ================= REVEAL ================= -->
+  <section class="screen" id="screen-reveal">
+    <div class="panel narrow reveal-panel">
+      <h2 class="screen-title">Player card</h2>
+      <div id="reveal-card"></div>
+      <div class="row-end">
+        <button class="btn btn-ghost" id="btn-rebuild">Start over</button>
+        <button class="btn btn-primary" id="btn-start-career">Start the season</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= HUB ================= -->
+  <section class="screen" id="screen-hub">
+    <header class="hub-header" id="hub-header"></header>
+    <div class="hub-grid">
+      <div class="col-main">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Season calendar</h3>
+            <span class="panel-sub" id="hub-year"></span>
+          </div>
+          <ul class="cal" id="cal-list"></ul>
+        </div>
+      </div>
+      <div class="col-side">
+        <div class="panel">
+          <div class="panel-head"><h3>Your game</h3><span class="panel-sub" id="ovr-sub"></span></div>
+          <div id="hub-attrs"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Rankings</h3>
+            <div class="seg small" id="seg-rank">
+              <button class="seg-btn active" data-v="live">Live</button>
+              <button class="seg-btn" data-v="race">Race</button>
+            </div>
+          </div>
+          <ol class="rank-list" id="rank-list"></ol>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Tour wire</h3></div>
+          <ul class="news" id="news-list"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= EVENT ================= -->
+  <section class="screen" id="screen-event">
+    <header class="ev-header" id="ev-header"></header>
+    <div class="ev-body">
+      <div class="panel court-panel" id="court-panel">
+        <div id="match-view"></div>
+        <div class="ev-actions" id="ev-actions"></div>
+      </div>
+      <div class="panel draw-panel">
+        <div class="panel-head"><h3>Draw</h3><span class="panel-sub" id="draw-sub"></span></div>
+        <div class="bracket-scroll"><div class="bracket" id="bracket"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SEASON END ================= -->
+  <section class="screen" id="screen-season-end">
+    <div class="panel narrow" id="season-end-body"></div>
+  </section>
+
+  <!-- ================= OFF SEASON ================= -->
+  <section class="screen" id="screen-offseason">
+    <div class="panel narrow" id="offseason-body"></div>
+  </section>
+
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
