@@ -27,7 +27,7 @@
 
       <div class="home-actions">
         <button class="btn btn-primary btn-lg" id="btn-new">Build a player</button>
-        <button class="btn btn-ghost btn-lg" id="btn-continue" hidden>Continue career</button>
+        <button class="btn btn-ghost btn-lg" id="btn-careers">Your careers</button>
       </div>
 
       <div class="home-rules">
@@ -211,9 +211,23 @@
     <div class="panel narrow" id="retirement-body"></div>
   </section>
 
+  <!-- ================= YOUR CAREERS (save slots) ================= -->
+  <section class="screen" id="screen-saves">
+    <div class="panel narrow">
+      <h2 class="screen-title">Your careers</h2>
+      <p class="saves-intro">Up to three careers, saved right here in this browser. Nothing is sent anywhere.</p>
+      <div id="saves-list"></div>
+      <div class="row-end"><button class="btn btn-ghost" data-goto="screen-home">Back</button></div>
+    </div>
+  </section>
+
 </div>
 
 <div class="toast-wrap" id="toast-wrap"></div>
+
+<div class="modal-backdrop" id="modal-backdrop" hidden>
+  <div class="modal" id="modal-box" role="dialog" aria-modal="true"></div>
+</div>
 
 <script src="js/data.js"></script>
 <script src="js/engine.js"></script>

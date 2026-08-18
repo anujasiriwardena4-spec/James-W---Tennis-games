@@ -340,6 +340,46 @@ button,input,select{font:inherit;color:inherit}
 .retire-blurb{color:var(--muted);max-width:52ch;margin:14px auto 0;font-size:15px;line-height:1.6}
 .retire-actions{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
 
+/* ---------- save slots ---------- */
+.saves-intro{color:var(--muted);margin-bottom:20px}
+.save-slot{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px 18px;margin-bottom:12px;
+}
+.save-slot.empty{border-style:dashed;opacity:.7}
+.save-slot-main{flex:1;min-width:180px}
+.save-slot-name{font-family:var(--font-cond);font-size:22px;text-transform:uppercase;line-height:1.1}
+.save-slot-meta{color:var(--dim);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
+.save-slot-empty-label{color:var(--dim);font-style:italic}
+.save-slot-actions{display:flex;gap:8px;flex:none}
+.btn-danger{background:transparent;border-color:rgba(248,113,113,.4);color:var(--bad)}
+.btn-danger:hover{background:rgba(248,113,113,.12);border-color:var(--bad)}
+
+/* ---------- modal ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(3,6,9,.72);backdrop-filter:blur(2px);
+  display:none;align-items:center;justify-content:center;padding:20px;z-index:90;
+}
+.modal-backdrop:not([hidden]){display:flex}
+.modal{
+  background:linear-gradient(180deg,var(--panel),var(--bg-2));border:1px solid var(--line);
+  border-radius:var(--r);padding:26px;max-width:440px;width:100%;box-shadow:var(--shadow);
+  animation:pop .22s ease both;
+}
+.modal-title{font-size:22px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:10px}
+.modal-body{color:var(--muted);font-size:14px;line-height:1.6}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
+.modal-slots{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.modal-slot-btn{
+  display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;
+  cursor:pointer;color:var(--txt);width:100%;
+}
+.modal-slot-btn:hover{border-color:var(--bad);background:rgba(248,113,113,.08)}
+.modal-slot-btn .msn{font-weight:600}
+.modal-slot-btn .mss{color:var(--dim);font-size:12px}
+
 /* ---------- toasts ---------- */
 .toast-wrap{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;pointer-events:none}
 .toast{
@@ -385,7 +425,7 @@ button,input,select{font:inherit;color:inherit}
 
       <div class="home-actions">
         <button class="btn btn-primary btn-lg" id="btn-new">Build a player</button>
-        <button class="btn btn-ghost btn-lg" id="btn-continue" hidden>Continue career</button>
+        <button class="btn btn-ghost btn-lg" id="btn-careers">Your careers</button>
       </div>
 
       <div class="home-rules">
@@ -569,9 +609,23 @@ button,input,select{font:inherit;color:inherit}
     <div class="panel narrow" id="retirement-body"></div>
   </section>
 
+  <!-- ================= YOUR CAREERS (save slots) ================= -->
+  <section class="screen" id="screen-saves">
+    <div class="panel narrow">
+      <h2 class="screen-title">Your careers</h2>
+      <p class="saves-intro">Up to three careers, saved right here in this browser. Nothing is sent anywhere.</p>
+      <div id="saves-list"></div>
+      <div class="row-end"><button class="btn btn-ghost" data-goto="screen-home">Back</button></div>
+    </div>
+  </section>
+
 </div>
 
 <div class="toast-wrap" id="toast-wrap"></div>
+
+<div class="modal-backdrop" id="modal-backdrop" hidden>
+  <div class="modal" id="modal-box" role="dialog" aria-modal="true"></div>
+</div>
 <script>
 /* ============================================================================
    BASELINE — data layer
@@ -1203,7 +1257,9 @@ function overall(p) {
    off-season, and the save file.
    ==========================================================================*/
 
-const SAVE_KEY = 'baseline.career.v1';
+const SAVE_PREFIX = 'baseline.career.slot';
+const SAVE_SLOTS = 3;
+function slotKey(slot) { return SAVE_PREFIX + slot + '.v1'; }
 
 /* --- the builder --------------------------------------------------------- */
 class Builder {
@@ -1290,6 +1346,7 @@ class Career {
     this.year = opts.year || 2026;
     this.startYear = this.year;
     this.seasonsCompleted = 0;
+    this.slot = opts.slot || null;   // which save slot this career writes to
     this.eventIndex = 0;
     this.week = 0;
     this.messages = [];
@@ -1586,11 +1643,14 @@ class Career {
       honours: this.honours.slice(),
       tier: legacyTier(c, this.seasonsCompleted)
     };
-    Career.clear();
+    if (this.slot) Career.clear(this.slot);
     return summary;
   }
 
-  /* --- save/load --------------------------------------------------------- */
+  /* --- save/load ----------------------------------------------------------
+     Up to SAVE_SLOTS independent careers can be parked at once. Each save
+     carries a small `meta` block alongside the full payload so the slot
+     picker can show a name/year/OVR without reviving all ~110 players. */
   toJSON() {
     const slim = p => ({
       id: p.id, name: p.name, country: p.country, hand: p.hand, bh: p.bh, age: p.age,
@@ -1598,21 +1658,44 @@ class Career {
       res: p.res, prev: p.prev, career: p.career, season: p.season
     });
     return {
-      v: 1, seed: this.seed, year: this.year, startYear: this.startYear,
+      v: 2, seed: this.seed, year: this.year, startYear: this.startYear,
       seasonsCompleted: this.seasonsCompleted, eventIndex: this.eventIndex, week: this.week,
       messages: this.messages, seasonLog: this.seasonLog, honours: this.honours,
       entries: this.entries, injuryWeeks: this.injuryWeeks,
-      user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim)
+      user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim),
+      meta: {
+        name: this.user.name, country: this.user.country, age: this.user.age,
+        year: this.year, ovr: overall(this.user), rank: this.user.rank || null,
+        titles: this.user.career.titles, slams: this.user.career.slams,
+        savedAt: Date.now()
+      }
     };
   }
   save() {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.toJSON())); return true; }
+    if (!this.slot) return false;
+    try { localStorage.setItem(slotKey(this.slot), JSON.stringify(this.toJSON())); return true; }
     catch (e) { return false; }
   }
-  static hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
-  static clear()   { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
-  static load() {
-    let raw; try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return null; }
+  static hasSave(slot) { try { return !!localStorage.getItem(slotKey(slot)); } catch (e) { return false; } }
+  static clear(slot)   { try { localStorage.removeItem(slotKey(slot)); } catch (e) {} }
+  /* every slot's summary, for the "your careers" screen — cheap, no revival */
+  static listSlots() {
+    const out = [];
+    for (let s = 1; s <= SAVE_SLOTS; s++) {
+      let raw = null; try { raw = localStorage.getItem(slotKey(s)); } catch (e) {}
+      if (!raw) { out.push({ slot: s, meta: null }); continue; }
+      let d = null; try { d = JSON.parse(raw); } catch (e) {}
+      out.push({ slot: s, meta: (d && d.meta) || null });
+    }
+    return out;
+  }
+  static anySaved() { return Career.listSlots().some(s => s.meta); }
+  static firstEmptySlot() {
+    const s = Career.listSlots().find(x => !x.meta);
+    return s ? s.slot : null;
+  }
+  static load(slot) {
+    let raw; try { raw = localStorage.getItem(slotKey(slot)); } catch (e) { return null; }
     if (!raw) return null;
     let d; try { d = JSON.parse(raw); } catch (e) { return null; }
     const revive = o => {
@@ -1622,6 +1705,7 @@ class Career {
       return p;
     };
     const c = Object.create(Career.prototype);
+    c.slot = slot;
     c.seed = d.seed; setSeed(d.seed + d.eventIndex * 977 + d.year);
     c.year = d.year; c.startYear = d.startYear || d.year; c.seasonsCompleted = d.seasonsCompleted || 0;
     c.eventIndex = d.eventIndex; c.week = d.week;
@@ -1664,6 +1748,49 @@ function toast(msg, kind) {
   setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .4s'; }, 2600);
   setTimeout(() => el.remove(), 3100);
 }
+/* ---------- modal ---------------------------------------------------------
+   Published pages run in a sandboxed iframe where window.confirm() is
+   silently suppressed — it returns false without ever showing anything, so
+   any "if (!confirm(...)) return" gate becomes a dead click the moment it's
+   reachable. These replace every such gate with a real in-page dialog. */
+function modalConfirm(title, body, confirmLabel, danger) {
+  return new Promise(resolve => {
+    const backdrop = $('#modal-backdrop');
+    $('#modal-box').innerHTML = `
+      <h3 class="modal-title">${esc(title)}</h3>
+      <p class="modal-body">${esc(body)}</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+        <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="modal-ok">${esc(confirmLabel || 'Confirm')}</button>
+      </div>`;
+    backdrop.hidden = false;
+    const close = val => { backdrop.hidden = true; resolve(val); };
+    $('#modal-cancel').addEventListener('click', () => close(false));
+    $('#modal-ok').addEventListener('click', () => close(true));
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(false); }, { once: true });
+  });
+}
+function modalPickSlot(title, body, slots) {
+  return new Promise(resolve => {
+    const backdrop = $('#modal-backdrop');
+    const rows = slots.map(s => `
+      <button class="modal-slot-btn" data-slot="${s.slot}">
+        <span class="msn">${esc(s.meta.name)}</span>
+        <span class="mss">${s.meta.year} · OVR ${s.meta.ovr}${s.meta.titles ? ` · ${s.meta.titles} title${s.meta.titles === 1 ? '' : 's'}` : ''}</span>
+      </button>`).join('');
+    $('#modal-box').innerHTML = `
+      <h3 class="modal-title">${esc(title)}</h3>
+      <p class="modal-body">${esc(body)}</p>
+      <div class="modal-slots">${rows}</div>
+      <div class="modal-actions"><button class="btn btn-ghost" id="modal-cancel">Cancel</button></div>`;
+    backdrop.hidden = false;
+    const close = val => { backdrop.hidden = true; resolve(val); };
+    $('#modal-cancel').addEventListener('click', () => close(null));
+    $$('.modal-slot-btn').forEach(b => b.addEventListener('click', () => close(parseInt(b.dataset.slot, 10))));
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(null); }, { once: true });
+  });
+}
+
 function vClass(v) { return v >= 93 ? 'v-elite' : v >= 86 ? 'v-great' : v >= 76 ? 'v-ok' : 'v-meh'; }
 function surfTag(s) { return `<span class="surf-tag s-${s}">${SURFACES[s].label}</span>`; }
 function catLabel(c) { return { gs: 'Grand Slam', m1000: 'Masters 1000', atp500: 'ATP 500', finals: 'Tour Finals' }[c] || c; }
@@ -1671,18 +1798,47 @@ function fmtPts(n) { return n.toLocaleString('en-US'); }
 
 /* ---------- home --------------------------------------------------------- */
 $('#btn-new').addEventListener('click', () => {
-  if (Career.hasSave() && !confirm('Starting a new build wipes your saved career. Continue?')) return;
   show('screen-identity');
   $('#in-name').focus();
 });
-$('#btn-continue').addEventListener('click', () => {
-  const c = Career.load();
-  if (!c) { toast('Save file could not be read', 'bad'); return; }
-  career = c;
-  renderHub(); show('screen-hub');
-});
+$('#btn-careers').addEventListener('click', () => { renderSaves(); show('screen-saves'); });
 $$('[data-goto]').forEach(b => b.addEventListener('click', () => show(b.dataset.goto)));
-if (Career.hasSave()) $('#btn-continue').hidden = false;
+
+/* ---------- save slots ---------------------------------------------------- */
+function renderSaves() {
+  const slots = Career.listSlots();
+  $('#saves-list').innerHTML = slots.map(s => {
+    if (!s.meta) return `<div class="save-slot empty">
+        <div class="save-slot-main"><span class="save-slot-empty-label">Slot ${s.slot} — empty</span></div>
+      </div>`;
+    const m = s.meta;
+    return `<div class="save-slot">
+        <div class="save-slot-main">
+          <div class="save-slot-name">${esc(m.name)}</div>
+          <div class="save-slot-meta">${m.country} · ${m.year} season · OVR ${m.ovr}${m.rank ? ` · #${m.rank}` : ''}${m.titles ? ` · ${m.titles} title${m.titles === 1 ? '' : 's'}` : ''}</div>
+        </div>
+        <div class="save-slot-actions">
+          <button class="btn btn-primary" data-load="${s.slot}">Continue</button>
+          <button class="btn btn-danger" data-delete="${s.slot}">Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+  $$('[data-load]').forEach(b => b.addEventListener('click', () => {
+    const c = Career.load(parseInt(b.dataset.load, 10));
+    if (!c) { toast('That save could not be read', 'bad'); return; }
+    career = c;
+    renderHub(); show('screen-hub');
+  }));
+  $$('[data-delete]').forEach(b => b.addEventListener('click', async () => {
+    const slot = parseInt(b.dataset.delete, 10);
+    const s = slots.find(x => x.slot === slot);
+    const ok = await modalConfirm('Delete this career?', `${s.meta.name}'s career will be gone for good. This can't be undone.`, 'Delete', true);
+    if (!ok) return;
+    Career.clear(slot);
+    renderSaves();
+    toast('Career deleted');
+  }));
+}
 
 /* ---------- identity ----------------------------------------------------- */
 (function initIdentity() {
@@ -1844,8 +2000,17 @@ $('#btn-rebuild').addEventListener('click', () => {
   resetBuilder();
   show('screen-builder');
 });
-$('#btn-start-career').addEventListener('click', () => {
-  career = new Career({ user: makeUserPlayer(), year: 2026 });
+$('#btn-start-career').addEventListener('click', async () => {
+  let slot = Career.firstEmptySlot();
+  if (!slot) {
+    slot = await modalPickSlot(
+      'All three slots are full',
+      'Pick a career to end early and overwrite with this new build — or cancel and manage saves from Your Careers instead.',
+      Career.listSlots().filter(s => s.meta)
+    );
+    if (!slot) return;
+  }
+  career = new Career({ user: makeUserPlayer(), year: 2026, slot });
   career.say(`${career.user.name} turns pro.`, 'good');
   career.save();
   renderHub(); show('screen-hub');
@@ -1893,8 +2058,10 @@ function renderHub() {
 }
 
 /* ---------- retirement ---------------------------------------------------- */
-function doRetire() {
-  if (!confirm(`Retire ${career.user.name}? This ends the career for good — there's no undo.`)) return;
+async function doRetire() {
+  const ok = await modalConfirm('Retire ' + career.user.name + '?',
+    "This ends the career for good — there's no undo.", 'Retire', true);
+  if (!ok) return;
   const summary = career.retire();
   renderRetirement(summary);
   show('screen-retirement');
@@ -1926,7 +2093,6 @@ function renderRetirement(s) {
     <div class="retire-actions"><button class="btn btn-primary btn-lg" id="btn-new-after-retire">Build a new player</button></div>`;
   $('#btn-new-after-retire').addEventListener('click', () => {
     career = null;
-    $('#btn-continue').hidden = true;
     show('screen-identity');
     $('#in-name').focus();
   });

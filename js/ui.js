@@ -25,6 +25,49 @@ function toast(msg, kind) {
   setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .4s'; }, 2600);
   setTimeout(() => el.remove(), 3100);
 }
+/* ---------- modal ---------------------------------------------------------
+   Published pages run in a sandboxed iframe where window.confirm() is
+   silently suppressed — it returns false without ever showing anything, so
+   any "if (!confirm(...)) return" gate becomes a dead click the moment it's
+   reachable. These replace every such gate with a real in-page dialog. */
+function modalConfirm(title, body, confirmLabel, danger) {
+  return new Promise(resolve => {
+    const backdrop = $('#modal-backdrop');
+    $('#modal-box').innerHTML = `
+      <h3 class="modal-title">${esc(title)}</h3>
+      <p class="modal-body">${esc(body)}</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+        <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="modal-ok">${esc(confirmLabel || 'Confirm')}</button>
+      </div>`;
+    backdrop.hidden = false;
+    const close = val => { backdrop.hidden = true; resolve(val); };
+    $('#modal-cancel').addEventListener('click', () => close(false));
+    $('#modal-ok').addEventListener('click', () => close(true));
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(false); }, { once: true });
+  });
+}
+function modalPickSlot(title, body, slots) {
+  return new Promise(resolve => {
+    const backdrop = $('#modal-backdrop');
+    const rows = slots.map(s => `
+      <button class="modal-slot-btn" data-slot="${s.slot}">
+        <span class="msn">${esc(s.meta.name)}</span>
+        <span class="mss">${s.meta.year} · OVR ${s.meta.ovr}${s.meta.titles ? ` · ${s.meta.titles} title${s.meta.titles === 1 ? '' : 's'}` : ''}</span>
+      </button>`).join('');
+    $('#modal-box').innerHTML = `
+      <h3 class="modal-title">${esc(title)}</h3>
+      <p class="modal-body">${esc(body)}</p>
+      <div class="modal-slots">${rows}</div>
+      <div class="modal-actions"><button class="btn btn-ghost" id="modal-cancel">Cancel</button></div>`;
+    backdrop.hidden = false;
+    const close = val => { backdrop.hidden = true; resolve(val); };
+    $('#modal-cancel').addEventListener('click', () => close(null));
+    $$('.modal-slot-btn').forEach(b => b.addEventListener('click', () => close(parseInt(b.dataset.slot, 10))));
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(null); }, { once: true });
+  });
+}
+
 function vClass(v) { return v >= 93 ? 'v-elite' : v >= 86 ? 'v-great' : v >= 76 ? 'v-ok' : 'v-meh'; }
 function surfTag(s) { return `<span class="surf-tag s-${s}">${SURFACES[s].label}</span>`; }
 function catLabel(c) { return { gs: 'Grand Slam', m1000: 'Masters 1000', atp500: 'ATP 500', finals: 'Tour Finals' }[c] || c; }
@@ -32,18 +75,47 @@ function fmtPts(n) { return n.toLocaleString('en-US'); }
 
 /* ---------- home --------------------------------------------------------- */
 $('#btn-new').addEventListener('click', () => {
-  if (Career.hasSave() && !confirm('Starting a new build wipes your saved career. Continue?')) return;
   show('screen-identity');
   $('#in-name').focus();
 });
-$('#btn-continue').addEventListener('click', () => {
-  const c = Career.load();
-  if (!c) { toast('Save file could not be read', 'bad'); return; }
-  career = c;
-  renderHub(); show('screen-hub');
-});
+$('#btn-careers').addEventListener('click', () => { renderSaves(); show('screen-saves'); });
 $$('[data-goto]').forEach(b => b.addEventListener('click', () => show(b.dataset.goto)));
-if (Career.hasSave()) $('#btn-continue').hidden = false;
+
+/* ---------- save slots ---------------------------------------------------- */
+function renderSaves() {
+  const slots = Career.listSlots();
+  $('#saves-list').innerHTML = slots.map(s => {
+    if (!s.meta) return `<div class="save-slot empty">
+        <div class="save-slot-main"><span class="save-slot-empty-label">Slot ${s.slot} — empty</span></div>
+      </div>`;
+    const m = s.meta;
+    return `<div class="save-slot">
+        <div class="save-slot-main">
+          <div class="save-slot-name">${esc(m.name)}</div>
+          <div class="save-slot-meta">${m.country} · ${m.year} season · OVR ${m.ovr}${m.rank ? ` · #${m.rank}` : ''}${m.titles ? ` · ${m.titles} title${m.titles === 1 ? '' : 's'}` : ''}</div>
+        </div>
+        <div class="save-slot-actions">
+          <button class="btn btn-primary" data-load="${s.slot}">Continue</button>
+          <button class="btn btn-danger" data-delete="${s.slot}">Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+  $$('[data-load]').forEach(b => b.addEventListener('click', () => {
+    const c = Career.load(parseInt(b.dataset.load, 10));
+    if (!c) { toast('That save could not be read', 'bad'); return; }
+    career = c;
+    renderHub(); show('screen-hub');
+  }));
+  $$('[data-delete]').forEach(b => b.addEventListener('click', async () => {
+    const slot = parseInt(b.dataset.delete, 10);
+    const s = slots.find(x => x.slot === slot);
+    const ok = await modalConfirm('Delete this career?', `${s.meta.name}'s career will be gone for good. This can't be undone.`, 'Delete', true);
+    if (!ok) return;
+    Career.clear(slot);
+    renderSaves();
+    toast('Career deleted');
+  }));
+}
 
 /* ---------- identity ----------------------------------------------------- */
 (function initIdentity() {
@@ -205,8 +277,17 @@ $('#btn-rebuild').addEventListener('click', () => {
   resetBuilder();
   show('screen-builder');
 });
-$('#btn-start-career').addEventListener('click', () => {
-  career = new Career({ user: makeUserPlayer(), year: 2026 });
+$('#btn-start-career').addEventListener('click', async () => {
+  let slot = Career.firstEmptySlot();
+  if (!slot) {
+    slot = await modalPickSlot(
+      'All three slots are full',
+      'Pick a career to end early and overwrite with this new build — or cancel and manage saves from Your Careers instead.',
+      Career.listSlots().filter(s => s.meta)
+    );
+    if (!slot) return;
+  }
+  career = new Career({ user: makeUserPlayer(), year: 2026, slot });
   career.say(`${career.user.name} turns pro.`, 'good');
   career.save();
   renderHub(); show('screen-hub');
@@ -254,8 +335,10 @@ function renderHub() {
 }
 
 /* ---------- retirement ---------------------------------------------------- */
-function doRetire() {
-  if (!confirm(`Retire ${career.user.name}? This ends the career for good — there's no undo.`)) return;
+async function doRetire() {
+  const ok = await modalConfirm('Retire ' + career.user.name + '?',
+    "This ends the career for good — there's no undo.", 'Retire', true);
+  if (!ok) return;
   const summary = career.retire();
   renderRetirement(summary);
   show('screen-retirement');
@@ -287,7 +370,6 @@ function renderRetirement(s) {
     <div class="retire-actions"><button class="btn btn-primary btn-lg" id="btn-new-after-retire">Build a new player</button></div>`;
   $('#btn-new-after-retire').addEventListener('click', () => {
     career = null;
-    $('#btn-continue').hidden = true;
     show('screen-identity');
     $('#in-name').focus();
   });

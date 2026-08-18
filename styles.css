@@ -328,6 +328,46 @@ button,input,select{font:inherit;color:inherit}
 .retire-blurb{color:var(--muted);max-width:52ch;margin:14px auto 0;font-size:15px;line-height:1.6}
 .retire-actions{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
 
+/* ---------- save slots ---------- */
+.saves-intro{color:var(--muted);margin-bottom:20px}
+.save-slot{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px 18px;margin-bottom:12px;
+}
+.save-slot.empty{border-style:dashed;opacity:.7}
+.save-slot-main{flex:1;min-width:180px}
+.save-slot-name{font-family:var(--font-cond);font-size:22px;text-transform:uppercase;line-height:1.1}
+.save-slot-meta{color:var(--dim);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
+.save-slot-empty-label{color:var(--dim);font-style:italic}
+.save-slot-actions{display:flex;gap:8px;flex:none}
+.btn-danger{background:transparent;border-color:rgba(248,113,113,.4);color:var(--bad)}
+.btn-danger:hover{background:rgba(248,113,113,.12);border-color:var(--bad)}
+
+/* ---------- modal ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(3,6,9,.72);backdrop-filter:blur(2px);
+  display:none;align-items:center;justify-content:center;padding:20px;z-index:90;
+}
+.modal-backdrop:not([hidden]){display:flex}
+.modal{
+  background:linear-gradient(180deg,var(--panel),var(--bg-2));border:1px solid var(--line);
+  border-radius:var(--r);padding:26px;max-width:440px;width:100%;box-shadow:var(--shadow);
+  animation:pop .22s ease both;
+}
+.modal-title{font-size:22px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:10px}
+.modal-body{color:var(--muted);font-size:14px;line-height:1.6}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
+.modal-slots{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.modal-slot-btn{
+  display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;
+  cursor:pointer;color:var(--txt);width:100%;
+}
+.modal-slot-btn:hover{border-color:var(--bad);background:rgba(248,113,113,.08)}
+.modal-slot-btn .msn{font-weight:600}
+.modal-slot-btn .mss{color:var(--dim);font-size:12px}
+
 /* ---------- toasts ---------- */
 .toast-wrap{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;pointer-events:none}
 .toast{

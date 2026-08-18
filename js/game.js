@@ -4,7 +4,9 @@
    off-season, and the save file.
    ==========================================================================*/
 
-const SAVE_KEY = 'baseline.career.v1';
+const SAVE_PREFIX = 'baseline.career.slot';
+const SAVE_SLOTS = 3;
+function slotKey(slot) { return SAVE_PREFIX + slot + '.v1'; }
 
 /* --- the builder --------------------------------------------------------- */
 class Builder {
@@ -91,6 +93,7 @@ class Career {
     this.year = opts.year || 2026;
     this.startYear = this.year;
     this.seasonsCompleted = 0;
+    this.slot = opts.slot || null;   // which save slot this career writes to
     this.eventIndex = 0;
     this.week = 0;
     this.messages = [];
@@ -387,11 +390,14 @@ class Career {
       honours: this.honours.slice(),
       tier: legacyTier(c, this.seasonsCompleted)
     };
-    Career.clear();
+    if (this.slot) Career.clear(this.slot);
     return summary;
   }
 
-  /* --- save/load --------------------------------------------------------- */
+  /* --- save/load ----------------------------------------------------------
+     Up to SAVE_SLOTS independent careers can be parked at once. Each save
+     carries a small `meta` block alongside the full payload so the slot
+     picker can show a name/year/OVR without reviving all ~110 players. */
   toJSON() {
     const slim = p => ({
       id: p.id, name: p.name, country: p.country, hand: p.hand, bh: p.bh, age: p.age,
@@ -399,21 +405,44 @@ class Career {
       res: p.res, prev: p.prev, career: p.career, season: p.season
     });
     return {
-      v: 1, seed: this.seed, year: this.year, startYear: this.startYear,
+      v: 2, seed: this.seed, year: this.year, startYear: this.startYear,
       seasonsCompleted: this.seasonsCompleted, eventIndex: this.eventIndex, week: this.week,
       messages: this.messages, seasonLog: this.seasonLog, honours: this.honours,
       entries: this.entries, injuryWeeks: this.injuryWeeks,
-      user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim)
+      user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim),
+      meta: {
+        name: this.user.name, country: this.user.country, age: this.user.age,
+        year: this.year, ovr: overall(this.user), rank: this.user.rank || null,
+        titles: this.user.career.titles, slams: this.user.career.slams,
+        savedAt: Date.now()
+      }
     };
   }
   save() {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.toJSON())); return true; }
+    if (!this.slot) return false;
+    try { localStorage.setItem(slotKey(this.slot), JSON.stringify(this.toJSON())); return true; }
     catch (e) { return false; }
   }
-  static hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
-  static clear()   { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
-  static load() {
-    let raw; try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return null; }
+  static hasSave(slot) { try { return !!localStorage.getItem(slotKey(slot)); } catch (e) { return false; } }
+  static clear(slot)   { try { localStorage.removeItem(slotKey(slot)); } catch (e) {} }
+  /* every slot's summary, for the "your careers" screen — cheap, no revival */
+  static listSlots() {
+    const out = [];
+    for (let s = 1; s <= SAVE_SLOTS; s++) {
+      let raw = null; try { raw = localStorage.getItem(slotKey(s)); } catch (e) {}
+      if (!raw) { out.push({ slot: s, meta: null }); continue; }
+      let d = null; try { d = JSON.parse(raw); } catch (e) {}
+      out.push({ slot: s, meta: (d && d.meta) || null });
+    }
+    return out;
+  }
+  static anySaved() { return Career.listSlots().some(s => s.meta); }
+  static firstEmptySlot() {
+    const s = Career.listSlots().find(x => !x.meta);
+    return s ? s.slot : null;
+  }
+  static load(slot) {
+    let raw; try { raw = localStorage.getItem(slotKey(slot)); } catch (e) { return null; }
     if (!raw) return null;
     let d; try { d = JSON.parse(raw); } catch (e) { return null; }
     const revive = o => {
@@ -423,6 +452,7 @@ class Career {
       return p;
     };
     const c = Object.create(Career.prototype);
+    c.slot = slot;
     c.seed = d.seed; setSeed(d.seed + d.eventIndex * 977 + d.year);
     c.year = d.year; c.startYear = d.startYear || d.year; c.seasonsCompleted = d.seasonsCompleted || 0;
     c.eventIndex = d.eventIndex; c.week = d.week;
@@ -438,4 +468,4 @@ class Career {
   }
 }
 
-if (typeof module !== 'undefined') { module.exports = { Builder, Career, SAVE_KEY }; }
+if (typeof module !== 'undefined') { module.exports = { Builder, Career, SAVE_SLOTS }; }

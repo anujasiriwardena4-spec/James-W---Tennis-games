@@ -20,6 +20,12 @@ points but recovers your legs.
 defended. Between seasons you age (up until about 26 it helps, after 30 it doesn't) and get
 a handful of training points to spend.
 
+**4 — Retire.** There's no forced ending — attributes just keep declining with age — but you
+can call it from the hub or the off-season screen whenever you want. Retiring judges the
+career against seven tiers (Journeyman up through GOAT Territory) based on Slams, Masters,
+weeks at No. 1 and best ranking, and clears that save slot. Building a new player is the
+replay loop.
+
 ## Running it
 
 It's a static site with no build step and no dependencies:
@@ -29,7 +35,8 @@ python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
-Careers save to `localStorage` under `baseline.career.v1`.
+Up to three careers save to `localStorage` at once, under `baseline.career.slot1.v1` through
+`.slot3.v1`. Manage them from the "Your careers" screen off the home page.
 
 ## Deploying
 
