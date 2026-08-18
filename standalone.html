@@ -1,0 +1,2159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BASELINE — Build a Tennis Player</title>
+<meta name="description" content="Spin the wheel, steal one skill from each legend, then take your player through a full tennis season of Grand Slams and Masters 1000s.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='%23d4ff3f'/><path d='M14 22a52 52 0 0 1 0 56M86 22a52 52 0 0 0 0 56' stroke='%230a0f14' stroke-width='6' fill='none'/></svg>">
+<style>
+/* ===== BASELINE ===== */
+:root{
+  --bg:#070b0e;
+  --bg-2:#0c1218;
+  --panel:#101820;
+  --panel-2:#16212b;
+  --line:#1f2d38;
+  --line-soft:#182430;
+  --txt:#e9f1f5;
+  --muted:#8ba0ad;
+  --dim:#5f7482;
+  --acc:#d4ff3f;
+  --acc-dark:#a8cc22;
+  --hard:#38bdf8;
+  --clay:#f97b3d;
+  --grass:#4ade80;
+  --indoor:#a78bfa;
+  --good:#4ade80;
+  --bad:#f87171;
+  --font-cond:"Barlow Condensed","Arial Narrow",Inter,system-ui,sans-serif;
+  --r:14px;
+  --shadow:0 18px 40px -20px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1100px 620px at 78% -12%, rgba(212,255,63,.10), transparent 62%),
+    radial-gradient(900px 520px at 8% 106%, rgba(56,189,248,.09), transparent 60%),
+    var(--bg);
+  color:var(--txt);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  min-height:100%;
+}
+h1,h2,h3,h4{font-family:var(--font-cond),Inter,system-ui,sans-serif;line-height:1.05;letter-spacing:.01em}
+button,input,select{font:inherit;color:inherit}
+::selection{background:var(--acc);color:#0a0f14}
+
+#app{max-width:1180px;margin:0 auto;padding:24px 20px 72px}
+.screen{display:none;animation:fade .35s ease both}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- shared bits ---------- */
+.panel{
+  background:linear-gradient(180deg,var(--panel),var(--bg-2));
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  padding:20px;
+  box-shadow:var(--shadow);
+}
+.panel + .panel{margin-top:18px}
+.panel.narrow{max-width:760px;margin:36px auto}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.panel-head h3{font-size:20px;text-transform:uppercase;letter-spacing:.06em}
+.panel-sub{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.14em}
+.screen-title{font-size:34px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:18px}
+
+.btn{
+  border:1px solid var(--line);background:var(--panel-2);color:var(--txt);
+  padding:10px 18px;border-radius:999px;cursor:pointer;font-weight:600;font-size:14px;
+  transition:.16s transform,.16s background,.16s border-color,.16s color;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-1px);border-color:#31465a}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-primary{background:var(--acc);color:#0a0f14;border-color:var(--acc)}
+.btn-primary:hover{background:#e2ff6e;border-color:#e2ff6e}
+.btn-ghost{background:transparent}
+.btn-lg{padding:14px 30px;font-size:16px}
+.row-end{display:flex;gap:12px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
+
+.seg{display:inline-flex;background:var(--bg-2);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg-btn{border:0;background:transparent;color:var(--muted);padding:7px 16px;border-radius:999px;cursor:pointer;font-weight:600;font-size:13px}
+.seg-btn.active{background:var(--acc);color:#0a0f14}
+.seg.small .seg-btn{padding:4px 12px;font-size:12px}
+
+.surf-tag{
+  font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+  padding:3px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap;
+}
+.s-hard{color:var(--hard)} .s-clay{color:var(--clay)} .s-grass{color:var(--grass)} .s-indoor{color:var(--indoor)}
+.cat-gs{color:var(--acc)}
+
+/* ---------- home ---------- */
+.home-wrap{max-width:880px;margin:0 auto;padding:56px 0 0;text-align:center}
+.home-mark{display:flex;align-items:center;justify-content:center;gap:18px}
+.home-mark h1{font-size:clamp(56px,12vw,124px);letter-spacing:-.02em;text-transform:uppercase}
+.ball{
+  width:clamp(34px,6vw,58px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 30%,#eaff7a,var(--acc) 60%,#9fc41d);
+  box-shadow:0 0 34px rgba(212,255,63,.4);
+  position:relative;flex:none;
+  animation:bob 3.4s ease-in-out infinite;
+}
+.ball::before,.ball::after{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  border:2px solid rgba(10,15,20,.55);
+}
+.ball::before{clip-path:inset(0 62% 0 0);transform:scaleX(2.1) translateX(23%)}
+.ball::after{clip-path:inset(0 0 0 62%);transform:scaleX(2.1) translateX(-23%)}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.tagline{color:var(--muted);font-size:18px;max-width:560px;margin:16px auto 30px}
+.home-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:56px}
+.home-rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;text-align:left}
+.rule{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;position:relative;overflow:hidden}
+.rule-n{font-family:var(--font-cond);font-size:52px;color:var(--line);position:absolute;top:-6px;right:12px;font-weight:700}
+.rule h3{font-size:20px;margin-bottom:8px;text-transform:uppercase}
+.rule p{color:var(--muted);font-size:14px}
+.footnote{color:var(--dim);font-size:12px;margin-top:34px}
+
+/* ---------- forms ---------- */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{display:flex;flex-direction:column;gap:7px}
+.field>span{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--dim)}
+.field input,.field select{
+  background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;width:100%;
+}
+.field input:focus,.field select:focus{outline:2px solid var(--acc-dark);outline-offset:1px}
+
+/* ---------- builder ---------- */
+.builder{display:grid;grid-template-columns:1fr 330px;gap:20px;align-items:start}
+.builder-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.builder-head .screen-title{margin:0}
+.respins{display:flex;gap:6px}
+.pip{width:12px;height:12px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px rgba(212,255,63,.5)}
+.pip.spent{background:transparent;border:1px solid var(--line);box-shadow:none}
+
+.spin-stage{
+  background:linear-gradient(180deg,var(--panel),var(--bg-2));
+  border:1px solid var(--line);border-radius:var(--r);
+  min-height:430px;display:flex;align-items:center;justify-content:center;padding:24px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.spin-stage::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent 0 62px,rgba(255,255,255,.014) 62px 63px);
+  pointer-events:none;
+}
+.spin-empty{text-align:center;max-width:420px}
+.spin-empty p{color:var(--muted);margin-bottom:22px}
+.spin-card{width:100%;position:relative;z-index:1}
+.spin-card-top{text-align:center;margin-bottom:20px}
+.tier-tag{
+  font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;
+  padding:4px 12px;border-radius:999px;background:rgba(212,255,63,.12);color:var(--acc);
+}
+.tier-tag.spec{background:rgba(56,189,248,.12);color:var(--hard)}
+.tier-tag.current{background:rgba(74,222,128,.12);color:var(--grass)}
+.spin-card-top h3{font-size:clamp(30px,5vw,50px);text-transform:uppercase;margin:10px 0 2px}
+.card-country{color:var(--dim);letter-spacing:.22em;font-size:12px;font-weight:600}
+.card-sig{color:var(--muted);font-style:italic;margin-top:8px;font-size:14px}
+.rolling{animation:roll .34s linear}
+@keyframes roll{0%{opacity:.15;transform:translateY(-14px) skewY(-4deg)}100%{opacity:1;transform:none}}
+
+.attr-choices{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.attr-btn{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:12px;
+  padding:14px 8px 12px;cursor:pointer;text-align:center;transition:.15s;
+}
+.attr-btn:hover:not(:disabled){border-color:var(--acc);transform:translateY(-2px);background:#1b2a36}
+.attr-btn:disabled{opacity:.28;cursor:not-allowed}
+.attr-btn .v{display:block;font-family:var(--font-cond);font-size:34px;font-weight:700;line-height:1}
+.attr-btn .k{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.v-elite{color:var(--acc)} .v-great{color:#9ee8a0} .v-ok{color:var(--txt)} .v-meh{color:var(--dim)}
+.spin-card-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:20px;flex-wrap:wrap}
+.hint{color:var(--dim);font-size:13px}
+
+.builder-right{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;position:sticky;top:20px}
+.side-title{font-size:18px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;color:var(--muted)}
+.slot-list{list-style:none;display:flex;flex-direction:column;gap:7px}
+.slot{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:var(--bg-2);border:1px solid var(--line-soft)}
+.slot.filled{border-color:rgba(212,255,63,.3)}
+.slot .sk{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);width:42px;flex:none;font-weight:700}
+.slot .sv{font-family:var(--font-cond);font-size:24px;font-weight:700;width:38px;flex:none}
+.slot .sf{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot .sf.empty{color:var(--dim);font-style:italic}
+.ovr-preview{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.ovr-preview span{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.ovr-preview strong{font-family:var(--font-cond);font-size:42px;color:var(--acc);line-height:1}
+
+/* ---------- player card ---------- */
+.pcard{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-bottom:6px}
+.pcard-top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.pcard-name{font-size:clamp(28px,5vw,44px);text-transform:uppercase}
+.pcard-meta{color:var(--muted);font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.pcard-ovr{text-align:right}
+.pcard-ovr b{display:block;font-family:var(--font-cond);font-size:64px;line-height:.9;color:var(--acc)}
+.pcard-ovr span{font-size:11px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+.bars{display:grid;gap:9px}
+.bar-row{display:grid;grid-template-columns:96px 1fr 34px;gap:12px;align-items:center}
+.bar-row .bl{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.bar-track{display:block;height:9px;border-radius:999px;background:#0a1219;overflow:hidden;border:1px solid var(--line-soft)}
+.bar-fill{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--acc-dark),var(--acc));transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.bar-row .bv{font-family:var(--font-cond);font-size:20px;font-weight:700;text-align:right}
+.bar-from{grid-column:1/-1;font-size:11px;color:var(--dim);margin-top:-4px;padding-left:96px}
+
+/* ---------- hub ---------- */
+.hub-header{
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+  background:linear-gradient(110deg,var(--panel),var(--bg-2) 65%);
+  border:1px solid var(--line);border-radius:var(--r);padding:18px 22px;margin-bottom:18px;box-shadow:var(--shadow);
+}
+.hh-name{font-size:30px;text-transform:uppercase;line-height:1}
+.hh-sub{color:var(--dim);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.hh-stats{display:flex;gap:22px;margin-left:auto;flex-wrap:wrap}
+.hh-stat{text-align:center;min-width:64px}
+.hh-stat b{display:block;font-family:var(--font-cond);font-size:28px;line-height:1}
+.hh-stat span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.meter{width:110px}
+.meter .bar-track{height:7px}
+.meter-lab{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.fill-form{background:linear-gradient(90deg,#2b7a4b,var(--good))}
+.fill-fat{background:linear-gradient(90deg,#7a2b2b,var(--bad))}
+
+.hub-grid{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+.cal{list-style:none;display:flex;flex-direction:column;gap:8px}
+.cal-row{
+  display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center;
+  padding:12px 14px;border-radius:12px;background:var(--bg-2);border:1px solid var(--line-soft);
+}
+.cal-row.next{border-color:var(--acc);background:linear-gradient(90deg,rgba(212,255,63,.07),var(--bg-2) 55%)}
+.cal-row.past{opacity:.62}
+.cal-wk{font-family:var(--font-cond);font-size:13px;color:var(--dim);letter-spacing:.08em}
+.cal-name{font-weight:600}
+.cal-sub{display:flex;align-items:center;gap:8px;color:var(--dim);font-size:12px;margin-top:3px;flex-wrap:wrap}
+.cal-res{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.cal-res b{color:var(--acc);font-family:var(--font-cond);font-size:19px;display:block}
+.cal-res.win b{color:var(--acc)}
+.cal-actions{display:flex;gap:8px}
+
+.rank-list{list-style:none;counter-reset:r}
+.rank-row{display:grid;grid-template-columns:28px 1fr auto;gap:10px;padding:7px 4px;border-bottom:1px solid var(--line-soft);align-items:center;font-size:14px}
+.rank-row:last-child{border-bottom:0}
+.rank-row .rn{font-family:var(--font-cond);color:var(--dim);font-size:16px}
+.rank-row.me{background:rgba(212,255,63,.08);border-radius:8px;padding-left:8px;padding-right:8px}
+.rank-row.me .pn{color:var(--acc);font-weight:600}
+.rank-row .pp{font-family:var(--font-cond);font-size:16px;color:var(--muted)}
+.flag{color:var(--dim);font-size:11px;letter-spacing:.1em;margin-right:6px}
+
+.news{list-style:none;display:flex;flex-direction:column;gap:9px;max-height:320px;overflow:auto}
+.news li{font-size:13px;color:var(--muted);padding-left:12px;border-left:2px solid var(--line);line-height:1.45}
+.news li.good{border-color:var(--acc);color:var(--txt)}
+.news li.bad{border-color:var(--bad)}
+
+/* ---------- event ---------- */
+.ev-header{
+  background:linear-gradient(110deg,var(--panel),var(--bg-2) 70%);
+  border:1px solid var(--line);border-radius:var(--r);padding:18px 22px;margin-bottom:18px;
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;box-shadow:var(--shadow);
+}
+.ev-header h2{font-size:32px;text-transform:uppercase;line-height:1}
+.ev-meta{color:var(--dim);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ev-body{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
+.court-panel{min-height:400px;display:flex;flex-direction:column}
+.ev-actions{display:flex;gap:10px;margin-top:auto;padding-top:18px;flex-wrap:wrap;justify-content:center}
+
+.matchup{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;margin-bottom:20px}
+.mp{text-align:center}
+.mp .mp-name{font-family:var(--font-cond);font-size:clamp(20px,3vw,30px);text-transform:uppercase;line-height:1.05}
+.mp .mp-sub{font-size:11px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;margin-top:4px}
+.mp.you .mp-name{color:var(--acc)}
+.mp.out{opacity:.5}
+.vs{font-family:var(--font-cond);color:var(--dim);font-size:18px;letter-spacing:.2em}
+.score-strip{display:flex;gap:8px;justify-content:center;margin:6px 0 18px;flex-wrap:wrap}
+.set-box{
+  min-width:62px;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;
+  padding:8px 6px;text-align:center;animation:pop .3s ease both;
+}
+@keyframes pop{from{opacity:0;transform:scale(.85) translateY(6px)}to{opacity:1;transform:none}}
+.set-box .sg{font-family:var(--font-cond);font-size:26px;font-weight:700;line-height:1.05}
+.set-box .sg sup{font-size:12px;color:var(--dim)}
+.set-box .sl{font-size:9px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;margin-top:2px}
+.set-box.won .sg{color:var(--acc)}
+.serving{color:var(--acc)}
+.match-result{text-align:center;font-family:var(--font-cond);font-size:26px;text-transform:uppercase;letter-spacing:.06em;margin:8px 0}
+.match-result.win{color:var(--acc)}
+.match-result.loss{color:var(--bad)}
+.stat-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+.stat-table td{padding:6px 8px;border-bottom:1px solid var(--line-soft)}
+.stat-table td:nth-child(2){text-align:center;color:var(--dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.stat-table td:first-child{text-align:right;font-family:var(--font-cond);font-size:18px}
+.stat-table td:last-child{text-align:left;font-family:var(--font-cond);font-size:18px}
+.round-label{text-align:center;color:var(--dim);font-size:12px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:14px}
+.other-results{margin-top:18px;border-top:1px solid var(--line-soft);padding-top:14px}
+.other-results h4{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.orow{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:3px 0;color:var(--muted)}
+.orow b{color:var(--txt);font-weight:600}
+
+.bracket-scroll{overflow:auto;padding-bottom:6px;max-height:600px}
+.bracket{display:flex;gap:10px;min-width:max-content}
+.bcol{display:flex;flex-direction:column;justify-content:space-around;gap:6px;min-width:132px}
+.bcol h5{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);text-align:center;margin-bottom:4px}
+.bmatch{background:var(--bg-2);border:1px solid var(--line-soft);border-radius:8px;overflow:hidden}
+.bp{display:flex;justify-content:space-between;gap:6px;padding:4px 7px;font-size:11.5px;color:var(--muted);border-bottom:1px solid var(--line-soft)}
+.bp:last-child{border-bottom:0}
+.bp.w{color:var(--txt);font-weight:600;background:rgba(255,255,255,.03)}
+.bp.me{color:var(--acc)}
+.bp .bs{font-family:var(--font-cond);font-size:13px;color:var(--dim)}
+.bp .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- season end / offseason ---------- */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:18px 0}
+.sum-tile{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+.sum-tile b{display:block;font-family:var(--font-cond);font-size:32px;line-height:1;color:var(--acc)}
+.sum-tile span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.season-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.season-table th{text-align:left;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:6px 8px;border-bottom:1px solid var(--line)}
+.season-table td{padding:6px 8px;border-bottom:1px solid var(--line-soft)}
+.season-table tr.hl td{color:var(--acc)}
+.train-row{display:grid;grid-template-columns:96px 1fr 34px auto;gap:12px;align-items:center;padding:6px 0}
+.train-btns{display:flex;gap:6px}
+.tbtn{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);cursor:pointer;font-weight:700}
+.tbtn:hover:not(:disabled){border-color:var(--acc);color:var(--acc)}
+.tbtn:disabled{opacity:.3;cursor:not-allowed}
+.honours{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.honours li{font-size:12px;background:rgba(212,255,63,.1);color:var(--acc);border:1px solid rgba(212,255,63,.25);padding:4px 10px;border-radius:999px}
+
+/* ---------- toasts ---------- */
+.toast-wrap{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;pointer-events:none}
+.toast{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:10px 20px;
+  font-size:14px;box-shadow:var(--shadow);animation:tin .3s ease both;
+}
+.toast.good{border-color:rgba(212,255,63,.5);color:var(--acc)}
+.toast.bad{border-color:rgba(248,113,113,.5);color:var(--bad)}
+@keyframes tin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ---------- responsive ---------- */
+@media (max-width:940px){
+  .builder,.hub-grid,.ev-body{grid-template-columns:1fr}
+  .builder-right{position:static}
+  .attr-choices{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width:620px){
+  #app{padding:16px 14px 60px}
+  .form-grid{grid-template-columns:1fr}
+  .attr-choices{grid-template-columns:repeat(2,1fr)}
+  .hh-stats{gap:14px;width:100%;margin-left:0}
+  .cal-row{grid-template-columns:1fr auto;gap:8px}
+  .cal-wk{display:none}
+  .screen-title{font-size:26px}
+  .bar-row{grid-template-columns:72px 1fr 30px}
+  .bar-from{padding-left:72px}
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= HOME ================= -->
+  <section class="screen active" id="screen-home">
+    <div class="home-wrap">
+      <div class="home-mark">
+        <span class="ball"></span>
+        <h1>BASELINE</h1>
+      </div>
+      <p class="tagline">Spin the wheel. Steal one skill from each name that comes up.
+        Then find out how far that player gets on tour.</p>
+
+      <div class="home-actions">
+        <button class="btn btn-primary btn-lg" id="btn-new">Build a player</button>
+        <button class="btn btn-ghost btn-lg" id="btn-continue" hidden>Continue career</button>
+      </div>
+
+      <div class="home-rules">
+        <div class="rule">
+          <span class="rule-n">01</span>
+          <h3>Eight skills, eight different players</h3>
+          <p>The wheel lands on someone. Take exactly one of their eight ratings — Sinner's backhand,
+             Isner's serve, Nadal's stamina — and they're gone from the pool for good.</p>
+        </div>
+        <div class="rule">
+          <span class="rule-n">02</span>
+          <h3>Three respins, that's it</h3>
+          <p>Don't like who came up? Respin. You get three all game, so burning one on a
+             journeyman to chase a legend is a real gamble.</p>
+        </div>
+        <div class="rule">
+          <span class="rule-n">03</span>
+          <h3>Then you actually have to play</h3>
+          <p>Four Grand Slams, nine Masters 1000s, the Tour Finals. Qualifying if you're
+             ranked too low, points that roll off 52 weeks later, injuries if you flog yourself.</p>
+        </div>
+      </div>
+      <p class="footnote">Unofficial fan project. Ratings are opinion, not endorsement.</p>
+    </div>
+  </section>
+
+  <!-- ================= IDENTITY ================= -->
+  <section class="screen" id="screen-identity">
+    <div class="panel narrow">
+      <h2 class="screen-title">Who are you?</h2>
+      <div class="form-grid">
+        <label class="field">
+          <span>Name</span>
+          <input type="text" id="in-name" maxlength="22" placeholder="Your player" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Country</span>
+          <select id="in-country"></select>
+        </label>
+        <label class="field">
+          <span>Age</span>
+          <select id="in-age"></select>
+        </label>
+        <div class="field">
+          <span>Playing hand</span>
+          <div class="seg" id="seg-hand">
+            <button class="seg-btn active" data-v="R">Right</button>
+            <button class="seg-btn" data-v="L">Left</button>
+          </div>
+        </div>
+        <div class="field">
+          <span>Backhand</span>
+          <div class="seg" id="seg-bh">
+            <button class="seg-btn active" data-v="2">Two-handed</button>
+            <button class="seg-btn" data-v="1">One-handed</button>
+          </div>
+        </div>
+      </div>
+      <div class="row-end">
+        <button class="btn btn-ghost" data-goto="screen-home">Back</button>
+        <button class="btn btn-primary" id="btn-to-builder">To the wheel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BUILDER ================= -->
+  <section class="screen" id="screen-builder">
+    <div class="builder">
+      <div class="builder-left">
+        <div class="builder-head">
+          <h2 class="screen-title">Take one skill</h2>
+          <div class="respins" id="respin-pips" title="Respins remaining"></div>
+        </div>
+        <div class="spin-stage" id="spin-stage">
+          <div class="spin-empty" id="spin-empty">
+            <p>Eight slots. Eight different players. Pick the skill you want off each one.</p>
+            <button class="btn btn-primary btn-lg" id="btn-spin">Spin</button>
+          </div>
+          <div class="spin-card" id="spin-card" hidden>
+            <div class="spin-card-top">
+              <span class="tier-tag" id="card-tier">legend</span>
+              <h3 id="card-name">—</h3>
+              <span class="card-country" id="card-country"></span>
+              <p class="card-sig" id="card-sig"></p>
+            </div>
+            <div class="attr-choices" id="attr-choices"></div>
+            <div class="spin-card-actions">
+              <button class="btn btn-ghost" id="btn-respin">Respin <span id="respin-count">(3)</span></button>
+              <span class="hint">Pick a rating above to lock it in</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="builder-right">
+        <h3 class="side-title">Your build</h3>
+        <ul class="slot-list" id="slot-list"></ul>
+        <div class="ovr-preview">
+          <span>Overall</span>
+          <strong id="ovr-preview">—</strong>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ================= REVEAL ================= -->
+  <section class="screen" id="screen-reveal">
+    <div class="panel narrow reveal-panel">
+      <h2 class="screen-title">Player card</h2>
+      <div id="reveal-card"></div>
+      <div class="row-end">
+        <button class="btn btn-ghost" id="btn-rebuild">Start over</button>
+        <button class="btn btn-primary" id="btn-start-career">Start the season</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= HUB ================= -->
+  <section class="screen" id="screen-hub">
+    <header class="hub-header" id="hub-header"></header>
+    <div class="hub-grid">
+      <div class="col-main">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Season calendar</h3>
+            <span class="panel-sub" id="hub-year"></span>
+          </div>
+          <ul class="cal" id="cal-list"></ul>
+        </div>
+      </div>
+      <div class="col-side">
+        <div class="panel">
+          <div class="panel-head"><h3>Your game</h3><span class="panel-sub" id="ovr-sub"></span></div>
+          <div id="hub-attrs"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Rankings</h3>
+            <div class="seg small" id="seg-rank">
+              <button class="seg-btn active" data-v="live">Live</button>
+              <button class="seg-btn" data-v="race">Race</button>
+            </div>
+          </div>
+          <ol class="rank-list" id="rank-list"></ol>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Tour wire</h3></div>
+          <ul class="news" id="news-list"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= EVENT ================= -->
+  <section class="screen" id="screen-event">
+    <header class="ev-header" id="ev-header"></header>
+    <div class="ev-body">
+      <div class="panel court-panel" id="court-panel">
+        <div id="match-view"></div>
+        <div class="ev-actions" id="ev-actions"></div>
+      </div>
+      <div class="panel draw-panel">
+        <div class="panel-head"><h3>Draw</h3><span class="panel-sub" id="draw-sub"></span></div>
+        <div class="bracket-scroll"><div class="bracket" id="bracket"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SEASON END ================= -->
+  <section class="screen" id="screen-season-end">
+    <div class="panel narrow" id="season-end-body"></div>
+  </section>
+
+  <!-- ================= OFF SEASON ================= -->
+  <section class="screen" id="screen-offseason">
+    <div class="panel narrow" id="offseason-body"></div>
+  </section>
+
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+<script>
+/* ============================================================================
+   BASELINE — data layer
+   Attribute scale is 40-99. Every rated human on the tour and in the spin pool
+   uses the same eight keys so ratings are directly comparable.
+   ==========================================================================*/
+
+const ATTRS = [
+  { key: 'serve',    label: 'Serve',     short: 'SRV', blurb: 'First-strike power, placement and free points.' },
+  { key: 'forehand', label: 'Forehand',  short: 'FH',  blurb: 'Your weapon wing — winners and rally control.' },
+  { key: 'backhand', label: 'Backhand',  short: 'BH',  blurb: 'Depth, redirection and defence off the other side.' },
+  { key: 'ret',      label: 'Return',    short: 'RET', blurb: 'Neutralising serves and manufacturing break points.' },
+  { key: 'movement', label: 'Movement',  short: 'MOV', blurb: 'Court coverage, slides, recovery between shots.' },
+  { key: 'net',      label: 'Net Play',  short: 'NET', blurb: 'Volleys, transition game, finishing short balls.' },
+  { key: 'stamina',  label: 'Stamina',   short: 'STA', blurb: 'Fifth-set legs and back-to-back-week durability.' },
+  { key: 'mental',   label: 'Mental',    short: 'MEN', blurb: 'Clutch on break points, tiebreaks and big stages.' }
+];
+
+const ATTR_KEYS = ATTRS.map(a => a.key);
+
+const SURFACES = {
+  hard:   { label: 'Hard',         cls: 'hard',   serve: 1.00, ret: 1.00, rally: 1.00 },
+  clay:   { label: 'Clay',         cls: 'clay',   serve: 0.92, ret: 1.07, rally: 1.06 },
+  grass:  { label: 'Grass',        cls: 'grass',  serve: 1.09, ret: 0.93, rally: 0.95 },
+  indoor: { label: 'Indoor Hard',  cls: 'indoor', serve: 1.05, ret: 0.98, rally: 0.99 }
+};
+
+/* --- Tour roster ---------------------------------------------------------
+   [name, country, hand, backhand(1/2), serve, fh, bh, ret, mov, net, sta, men]
+   These are the AI rivals you fight for ranking points all season.
+------------------------------------------------------------------------- */
+const TOUR_RAW = [
+  ['Jannik Sinner',        'ITA', 'R', 2, 88, 93, 96, 92, 90, 82, 92, 94],
+  ['Carlos Alcaraz',       'ESP', 'R', 2, 87, 96, 88, 90, 96, 90, 92, 92],
+  ['Novak Djokovic',       'SRB', 'R', 2, 86, 90, 97, 97, 94, 86, 93, 97],
+  ['Alexander Zverev',     'GER', 'R', 1, 92, 86, 91, 88, 84, 76, 88, 78],
+  ['Daniil Medvedev',      'RUS', 'R', 2, 88, 85, 90, 94, 90, 72, 94, 82],
+  ['Taylor Fritz',         'USA', 'R', 2, 93, 90, 82, 80, 80, 78, 84, 80],
+  ['Jack Draper',          'GBR', 'L', 2, 90, 90, 85, 84, 82, 78, 78, 82],
+  ['Casper Ruud',          'NOR', 'R', 2, 82, 91, 84, 84, 86, 74, 88, 82],
+  ['Holger Rune',          'DEN', 'R', 2, 86, 89, 86, 85, 87, 80, 82, 76],
+  ['Alex de Minaur',       'AUS', 'R', 2, 76, 82, 85, 89, 97, 80, 92, 86],
+  ['Lorenzo Musetti',      'ITA', 'R', 1, 82, 86, 93, 82, 88, 86, 78, 78],
+  ['Ben Shelton',          'USA', 'L', 2, 95, 88, 78, 76, 84, 82, 82, 80],
+  ['Andrey Rublev',        'RUS', 'R', 2, 87, 93, 82, 82, 80, 70, 84, 62],
+  ['Stefanos Tsitsipas',   'GRE', 'R', 1, 88, 91, 78, 78, 86, 88, 86, 76],
+  ['Grigor Dimitrov',      'BUL', 'R', 1, 86, 89, 88, 82, 88, 88, 80, 76],
+  ['Tommy Paul',           'USA', 'R', 2, 84, 86, 84, 84, 90, 82, 86, 84],
+  ['Frances Tiafoe',       'USA', 'R', 2, 86, 86, 78, 82, 90, 84, 82, 78],
+  ['Hubert Hurkacz',       'POL', 'R', 2, 95, 84, 78, 74, 78, 86, 80, 76],
+  ['Felix Auger-Aliassime','CAN', 'R', 2, 91, 88, 82, 80, 86, 84, 84, 74],
+  ['Karen Khachanov',      'RUS', 'R', 2, 89, 88, 84, 82, 78, 74, 84, 78],
+  ['Ugo Humbert',          'FRA', 'L', 1, 88, 86, 88, 80, 84, 82, 78, 76],
+  ['Arthur Fils',          'FRA', 'R', 2, 87, 89, 82, 80, 88, 78, 82, 80],
+  ['Jakub Mensik',         'CZE', 'R', 2, 93, 86, 82, 76, 80, 78, 78, 78],
+  ['Joao Fonseca',         'BRA', 'R', 2, 88, 93, 84, 78, 84, 76, 78, 82],
+  ['Tomas Machac',         'CZE', 'R', 2, 84, 86, 86, 84, 90, 80, 82, 78],
+  ['Jiri Lehecka',         'CZE', 'R', 2, 89, 88, 84, 78, 80, 78, 80, 76],
+  ['Sebastian Korda',      'USA', 'R', 2, 87, 88, 86, 80, 84, 80, 78, 72],
+  ['Alexei Popyrin',       'AUS', 'R', 2, 91, 86, 78, 76, 80, 78, 78, 74],
+  ['Alexander Bublik',     'KAZ', 'R', 1, 94, 84, 76, 74, 76, 86, 72, 64],
+  ['Denis Shapovalov',     'CAN', 'L', 1, 90, 86, 84, 76, 84, 84, 76, 68],
+  ['Matteo Berrettini',    'ITA', 'R', 2, 94, 92, 72, 74, 76, 84, 78, 78],
+  ['Francisco Cerundolo',  'ARG', 'R', 2, 80, 91, 78, 80, 84, 70, 84, 74],
+  ['Nicolas Jarry',        'CHI', 'R', 1, 92, 88, 76, 74, 76, 76, 80, 70],
+  ['Sebastian Baez',       'ARG', 'R', 2, 72, 84, 80, 84, 90, 68, 88, 78],
+  ['Tallon Griekspoor',    'NED', 'R', 2, 88, 86, 80, 76, 80, 76, 80, 72],
+  ['Flavio Cobolli',       'ITA', 'R', 2, 84, 86, 84, 80, 86, 74, 82, 78],
+  ['Brandon Nakashima',    'USA', 'R', 2, 84, 84, 86, 82, 86, 76, 84, 80],
+  ['Jordan Thompson',      'AUS', 'R', 2, 84, 80, 82, 80, 84, 88, 84, 80],
+  ['Alejandro Davidovich', 'ESP', 'R', 1, 80, 86, 84, 84, 90, 82, 82, 66],
+  ['Daniel Altmaier',      'GER', 'R', 2, 80, 84, 84, 82, 84, 72, 86, 76],
+  ['Roberto Bautista Agut','ESP', 'R', 2, 76, 84, 86, 86, 84, 72, 88, 88],
+  ['Zhizhen Zhang',        'CHN', 'R', 2, 89, 86, 78, 76, 78, 74, 78, 72],
+  ['Gael Monfils',         'FRA', 'R', 2, 88, 86, 82, 84, 94, 78, 76, 70],
+  ['Stan Wawrinka',        'SUI', 'R', 1, 88, 88, 95, 78, 74, 78, 76, 84],
+  ['Marin Cilic',          'CRO', 'R', 2, 92, 88, 84, 76, 74, 76, 78, 78],
+  ['Adrian Mannarino',     'FRA', 'L', 2, 78, 78, 86, 84, 82, 80, 82, 76],
+  ['Yoshihito Nishioka',   'JPN', 'L', 2, 70, 80, 82, 86, 92, 70, 86, 78],
+  ['Botic van de Zandschulp','NED','R', 2, 84, 82, 82, 82, 82, 76, 82, 74]
+];
+
+/* --- Spin pool -----------------------------------------------------------
+   Who the wheel can land on in the builder. Legends carry one or two truly
+   elite numbers — that's the whole point of the spin.
+------------------------------------------------------------------------- */
+const POOL_RAW = [
+  // era-defining legends
+  ['Roger Federer',      'SUI', 'legend',  95, 98, 86, 88, 95, 96, 90, 95, 'that forehand'],
+  ['Rafael Nadal',       'ESP', 'legend',  84, 97, 86, 90, 96, 86, 97, 98, 'the buffalo lungs'],
+  ['Novak Djokovic',     'SRB', 'legend',  86, 90, 97, 97, 94, 86, 93, 97, 'the return of serve'],
+  ['Pete Sampras',       'USA', 'legend',  98, 92, 82, 78, 88, 95, 86, 94, 'the running forehand'],
+  ['Andre Agassi',       'USA', 'legend',  80, 94, 95, 96, 86, 70, 86, 86, 'ball-striking on the rise'],
+  ['Andy Murray',        'GBR', 'legend',  88, 86, 92, 95, 92, 88, 90, 86, 'the lob and the legs'],
+  ['Bjorn Borg',         'SWE', 'legend',  88, 92, 88, 90, 95, 78, 98, 97, 'ice in the veins'],
+  ['John McEnroe',       'USA', 'legend',  90, 86, 84, 88, 90, 99, 76, 72, 'hands at the net'],
+  ['Ivan Lendl',         'CZE', 'legend',  90, 95, 82, 86, 84, 76, 92, 88, 'the inside-out forehand'],
+  ['Boris Becker',       'GER', 'legend',  95, 88, 80, 78, 84, 94, 84, 88, 'the diving volley'],
+  ['Steffi Graf',        'GER', 'legend',  86, 97, 84, 88, 97, 84, 90, 94, 'the slice and the sprint'],
+  ['Martina Navratilova','USA', 'legend',  92, 86, 84, 86, 92, 99, 88, 92, 'serve and volley, perfected'],
+  ['Serena Williams',    'USA', 'legend',  96, 96, 92, 94, 86, 82, 86, 96, 'the biggest serve in the game'],
+  ['Monica Seles',       'USA', 'legend',  78, 95, 96, 90, 82, 66, 86, 90, 'two hands off both wings'],
+  // specialists — one freakish number each
+  ['John Isner',         'USA', 'spec',    99, 82, 70, 62, 62, 76, 76, 74, 'the unreturnable serve'],
+  ['Andy Roddick',       'USA', 'spec',    97, 90, 72, 74, 78, 78, 82, 82, '155mph'],
+  ['Juan Martin del Potro','ARG','spec',   92, 99, 78, 80, 72, 78, 78, 86, 'the flat forehand bomb'],
+  ['Gustavo Kuerten',    'BRA', 'spec',    86, 94, 86, 82, 88, 78, 88, 86, 'clay-court artistry'],
+  ['Marat Safin',        'RUS', 'spec',    93, 94, 90, 84, 82, 80, 80, 58, 'pure ball-striking'],
+  ['David Ferrer',       'ESP', 'spec',    70, 84, 82, 88, 94, 72, 99, 90, 'never misses a ball'],
+  ['Gael Monfils',       'FRA', 'spec',    88, 86, 82, 84, 97, 78, 76, 70, 'inhuman athleticism'],
+  ['Stan Wawrinka',      'SUI', 'spec',    88, 88, 98, 78, 74, 78, 76, 84, 'the one-handed backhand'],
+  ['Richard Gasquet',    'FRA', 'spec',    80, 82, 96, 80, 84, 82, 78, 70, 'the prettiest backhand alive'],
+  ['Nick Kyrgios',       'AUS', 'spec',    97, 88, 84, 78, 80, 88, 70, 58, 'the underarm and the tweener'],
+  ['Kei Nishikori',      'JPN', 'spec',    74, 88, 92, 88, 90, 76, 78, 78, 'taking the ball early'],
+  // current tour headliners
+  ['Jannik Sinner',      'ITA', 'current', 88, 93, 96, 92, 90, 82, 92, 94, 'the cleanest backhand on tour'],
+  ['Carlos Alcaraz',     'ESP', 'current', 87, 96, 88, 90, 96, 90, 92, 92, 'the drop shot'],
+  ['Daniil Medvedev',    'RUS', 'current', 88, 85, 90, 94, 90, 72, 94, 82, 'returning from the back fence'],
+  ['Alexander Zverev',   'GER', 'current', 92, 86, 91, 88, 84, 76, 88, 78, 'the wingspan'],
+  ['Alex de Minaur',     'AUS', 'current', 76, 82, 85, 89, 97, 80, 92, 86, 'the fastest legs on tour'],
+  ['Ben Shelton',        'USA', 'current', 95, 88, 78, 76, 84, 82, 82, 80, 'the lefty rocket'],
+  ['Taylor Fritz',       'USA', 'current', 93, 90, 82, 80, 80, 78, 84, 80, 'first-strike tennis'],
+  ['Lorenzo Musetti',    'ITA', 'current', 82, 86, 93, 82, 88, 86, 78, 78, 'the touch game'],
+  ['Jack Draper',        'GBR', 'current', 90, 90, 85, 84, 82, 78, 78, 82, 'the lefty forehand'],
+  ['Hubert Hurkacz',     'POL', 'current', 95, 84, 78, 74, 78, 86, 80, 76, 'the free points'],
+  ['Iga Swiatek',        'POL', 'current', 84, 96, 88, 90, 94, 76, 92, 88, 'the buggy-whip forehand'],
+  ['Aryna Sabalenka',    'BLR', 'current', 94, 95, 90, 86, 82, 74, 84, 82, 'raw power'],
+  ['Coco Gauff',         'USA', 'current', 88, 82, 90, 92, 96, 82, 90, 86, 'the wheels and the return'],
+  ['Grigor Dimitrov',    'BUL', 'current', 86, 89, 88, 82, 88, 88, 80, 76, 'the all-court feel'],
+  ['Stefanos Tsitsipas', 'GRE', 'current', 88, 91, 78, 78, 86, 88, 86, 76, 'the transition game'],
+  ['Andrey Rublev',      'RUS', 'current', 87, 93, 82, 82, 80, 70, 84, 62, 'the biggest forehand in the top 10']
+];
+
+/* --- Calendar ----------------------------------------------------------- */
+const PTS = {
+  gs:      [10, 100, 400, 800, 1300, 2000],
+  m1000:   [10,  50, 200, 400,  650, 1000],
+  atp500:  [ 0,  25, 100, 200,  330,  500]
+};
+
+const CALENDAR = [
+  { id:'ade', week: 1,  name:'Adelaide International', city:'Adelaide',       cat:'atp500', surface:'hard',   draw:32, bestOf:3, mandatory:false },
+  { id:'ao',  week: 3,  name:'Australian Open',        city:'Melbourne',      cat:'gs',     surface:'hard',   draw:32, bestOf:5, mandatory:true  },
+  { id:'rot', week: 7,  name:'Rotterdam Open',         city:'Rotterdam',      cat:'atp500', surface:'indoor', draw:32, bestOf:3, mandatory:false },
+  { id:'iw',  week:10,  name:'Indian Wells Masters',   city:'Indian Wells',   cat:'m1000',  surface:'hard',   draw:32, bestOf:3, mandatory:true  },
+  { id:'mia', week:12,  name:'Miami Open',             city:'Miami',          cat:'m1000',  surface:'hard',   draw:32, bestOf:3, mandatory:true  },
+  { id:'mc',  week:15,  name:'Monte-Carlo Masters',    city:'Monte-Carlo',    cat:'m1000',  surface:'clay',   draw:32, bestOf:3, mandatory:false },
+  { id:'mad', week:17,  name:'Madrid Open',            city:'Madrid',         cat:'m1000',  surface:'clay',   draw:32, bestOf:3, mandatory:true  },
+  { id:'rom', week:19,  name:'Italian Open',           city:'Rome',           cat:'m1000',  surface:'clay',   draw:32, bestOf:3, mandatory:true  },
+  { id:'rg',  week:21,  name:'Roland-Garros',          city:'Paris',          cat:'gs',     surface:'clay',   draw:32, bestOf:5, mandatory:true  },
+  { id:'qc',  week:24,  name:"Queen's Club",           city:'London',         cat:'atp500', surface:'grass',  draw:32, bestOf:3, mandatory:false },
+  { id:'wim', week:26,  name:'Wimbledon',              city:'London',         cat:'gs',     surface:'grass',  draw:32, bestOf:5, mandatory:true  },
+  { id:'can', week:31,  name:'Canadian Open',          city:'Toronto',        cat:'m1000',  surface:'hard',   draw:32, bestOf:3, mandatory:true  },
+  { id:'cin', week:32,  name:'Cincinnati Masters',     city:'Cincinnati',     cat:'m1000',  surface:'hard',   draw:32, bestOf:3, mandatory:true  },
+  { id:'uso', week:34,  name:'US Open',                city:'New York',       cat:'gs',     surface:'hard',   draw:32, bestOf:5, mandatory:true  },
+  { id:'sha', week:40,  name:'Shanghai Masters',       city:'Shanghai',       cat:'m1000',  surface:'hard',   draw:32, bestOf:3, mandatory:true  },
+  { id:'par', week:44,  name:'Paris Masters',          city:'Paris',          cat:'m1000',  surface:'indoor', draw:32, bestOf:3, mandatory:true  },
+  { id:'fin', week:46,  name:'Tour Finals',            city:'Turin',          cat:'finals', surface:'indoor', draw:8,  bestOf:3, mandatory:true  }
+];
+
+const ROUND_NAMES_32 = ['Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final', 'Final'];
+
+const COUNTRIES = ['AUS','USA','GBR','ESP','ITA','FRA','GER','SRB','SUI','ARG','BRA','CAN','JPN','NED','POL','SWE','CZE','GRE','NOR','DEN','RUS','KAZ','CHN','IND','RSA','MEX','CRO','BUL','CHI','KOR'];
+
+const FIRST_NAMES = ['Milo','Kaito','Andre','Luca','Theo','Nikola','Rafa','Aleks','Bruno','Ivan','Emil','Dario','Otto','Rui','Sami','Noel','Enzo','Lars','Vito','Yannis','Kian','Reid','Cody','Marek','Tobias','Elias','Nate','Rowan','Damir','Felipe'];
+const LAST_NAMES  = ['Varga','Okonkwo','Silva','Kovac','Brandt','Ferreira','Ilic','Nowak','Aranda','Petrov','Larsson','Haddad','Moreau','Duarte','Bianchi','Reyes','Kaminski','Vidal','Novak','Ostrowski','Bergman','Delgado','Sato','Ranieri','Chen','Aziz','Halvorsen','Pereira','Marek','Toth'];
+
+/* ============================================================================
+   BASELINE — simulation engine
+   The match model is a point-level Markov chain, the approach used by most
+   open-source tennis simulators: derive a serve-point win probability from the
+   two players' ratings, then walk games -> tiebreaks -> sets from it. Everything
+   above that layer (draws, seeding, points, rankings) is bookkeeping.
+   ==========================================================================*/
+
+/* --- deterministic RNG so a save file replays identically ---------------- */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+let RNG = mulberry32(Date.now() % 2147483647);
+function setSeed(seed) { RNG = mulberry32(seed); }
+function rnd()            { return RNG(); }
+function rndInt(n)        { return Math.floor(RNG() * n); }
+function pick(arr)        { return arr[rndInt(arr.length)]; }
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = rndInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+// normal-ish noise without the tails
+function jitter(spread) { return (RNG() + RNG() + RNG() - 1.5) * spread; }
+
+/* --- player construction ------------------------------------------------ */
+let _uid = 1;
+function makePlayer(name, country, attrs, opts = {}) {
+  return {
+    id: opts.id || ('p' + (_uid++)),
+    name, country,
+    hand: opts.hand || 'R',
+    bh: opts.bh || 2,
+    age: opts.age || (21 + rndInt(11)),
+    attrs: Object.assign({}, attrs),
+    isUser: !!opts.isUser,
+    form: 1.0,           // 0.93 - 1.07, drifts week to week
+    fatigue: 0,          // 0 - 100, shaves stamina-linked output
+    res: {},             // points won this season, by event id
+    prev: {},            // last season's points, for the 52-week roll
+    career: { titles: 0, slams: 0, masters: 0, finals: 0, w: 0, l: 0, weeksNo1: 0, prize: 0, bestRank: 999 },
+    season: { w: 0, l: 0, titles: 0 },
+    history: []
+  };
+}
+
+function buildTour(TOUR_RAW) {
+  return TOUR_RAW.map(r => makePlayer(r[0], r[1], {
+    serve: r[4], forehand: r[5], backhand: r[6], ret: r[7],
+    movement: r[8], net: r[9], stamina: r[10], mental: r[11]
+  }, { hand: r[2], bh: r[3] }));
+}
+
+// fills the bottom of the rankings so there is always someone to qualify against
+function buildJourneymen(count, FIRST_NAMES, LAST_NAMES, COUNTRIES) {
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const base = 62 - Math.floor(i / 6);
+    const a = {};
+    ['serve','forehand','backhand','ret','movement','net','stamina','mental']
+      .forEach(k => { a[k] = clamp(Math.round(base + jitter(9)), 40, 82); });
+    out.push(makePlayer(
+      pick(FIRST_NAMES) + ' ' + pick(LAST_NAMES),
+      pick(COUNTRIES), a, { hand: rnd() < 0.14 ? 'L' : 'R', bh: rnd() < 0.2 ? 1 : 2 }
+    ));
+  }
+  return out;
+}
+
+/* --- rating -> match indices -------------------------------------------- */
+function effAttrs(p) {
+  const f = p.fatigue || 0;
+  const tired = 1 - (f / 100) * 0.13;                     // legs go first
+  const formMul = p.form || 1;
+  const out = {};
+  for (const k in p.attrs) {
+    let v = p.attrs[k] * formMul;
+    if (k === 'movement' || k === 'stamina') v *= tired;
+    else v *= (1 - (f / 100) * 0.05);
+    out[k] = v;
+  }
+  return out;
+}
+
+// Per-surface weight sets. Each set sums to 1 so index magnitudes stay
+// comparable across surfaces — the surface changes *what matters*, while the
+// base hold rate below changes *how much* serving is worth.
+const W = {
+  serve: {
+    hard:   { serve:.70, forehand:.10, mental:.08, net:.07, stamina:.05 },
+    clay:   { serve:.58, forehand:.16, mental:.08, net:.06, stamina:.12 },
+    grass:  { serve:.78, forehand:.07, mental:.06, net:.07, stamina:.02 },
+    indoor: { serve:.74, forehand:.09, mental:.07, net:.07, stamina:.03 }
+  },
+  ret: {
+    hard:   { ret:.52, movement:.18, backhand:.16, stamina:.08, mental:.06 },
+    clay:   { ret:.44, movement:.24, backhand:.16, stamina:.12, mental:.04 },
+    grass:  { ret:.60, movement:.14, backhand:.14, stamina:.06, mental:.06 },
+    indoor: { ret:.54, movement:.17, backhand:.16, stamina:.07, mental:.06 }
+  },
+  rally: {
+    hard:   { forehand:.30, backhand:.26, movement:.22, stamina:.12, net:.10 },
+    clay:   { forehand:.28, backhand:.24, movement:.26, stamina:.18, net:.04 },
+    grass:  { forehand:.28, backhand:.22, movement:.20, stamina:.08, net:.22 },
+    indoor: { forehand:.32, backhand:.26, movement:.18, stamina:.10, net:.14 }
+  }
+};
+
+// how much a hold is worth before either player's quality is considered
+const BASE_HOLD = { hard: 0.645, clay: 0.612, grass: 0.678, indoor: 0.657 };
+// Serve quality matters most on grass, least on clay. Return quality is the
+// mirror image — this is what actually makes a surface specialist.
+const SERVE_INF = { hard: 0.0034, clay: 0.0024, grass: 0.0042, indoor: 0.0038 };
+const RET_INF   = { hard: 0.0032, clay: 0.0040, grass: 0.0022, indoor: 0.0030 };
+const RALLY_INF = { hard: 0.0014, clay: 0.0022, grass: 0.0009, indoor: 0.0013 };
+const TOUR_MEAN = 85;
+
+function weigh(a, w) { let t = 0; for (const k in w) t += a[k] * w[k]; return t; }
+
+function indices(p, surface) {
+  const a = effAttrs(p);
+  return {
+    serve:   weigh(a, W.serve[surface]),
+    ret:     weigh(a, W.ret[surface]),
+    rally:   weigh(a, W.rally[surface]),
+    mental:  a.mental,
+    aceBase: a.serve,
+    netSkill: a.net,
+    stamina: a.stamina
+  };
+}
+
+function servePointProb(srv, ret, surface) {
+  const p = BASE_HOLD[surface]
+    + SERVE_INF[surface] * (srv.serve - TOUR_MEAN)
+    - RET_INF[surface]   * (ret.ret   - TOUR_MEAN)
+    + RALLY_INF[surface] * (srv.rally - ret.rally);
+  return clamp(p, 0.44, 0.84);
+}
+
+/* --- match simulation ---------------------------------------------------- */
+const BLANK_STATS = () => ({ aces: 0, df: 0, winners: 0, ue: 0, bpWon: 0, bpFaced: 0, ptsWon: 0, ptsPlayed: 0, svPtsWon: 0, svPts: 0 });
+
+function simMatch(A, B, cfg) {
+  const surface = cfg.surface;
+  const bestOf = cfg.bestOf || 3;
+  const finalSetTB = cfg.finalSetTB !== false;
+
+  // form on the day — the reason upsets happen at all
+  const ia = indices(A, surface), ib = indices(B, surface);
+  // day form: usually small, occasionally someone turns up flat
+  let dayA = jitter(3.4), dayB = jitter(3.4);
+  if (rnd() < 0.07) dayA -= 4 + rnd() * 4;
+  if (rnd() < 0.07) dayB -= 4 + rnd() * 4;
+  ia.serve += dayA; ia.ret += dayA; ia.rally += dayA;
+  ib.serve += dayB; ib.ret += dayB; ib.rally += dayB;
+
+  const pA = servePointProb(ia, ib, surface);   // A holding serve
+  const pB = servePointProb(ib, ia, surface);   // B holding serve
+  const clutch = clamp((ia.mental - ib.mental) * 0.0011, -0.035, 0.035);   // applied on big points, A's favour
+
+  const st = { A: BLANK_STATS(), B: BLANK_STATS() };
+  const sets = [];
+  let setsA = 0, setsB = 0;
+  let server = rnd() < 0.5 ? 'A' : 'B';
+  let games = 0, totalPoints = 0;
+  let fatigueA = 0, fatigueB = 0;
+
+  function point(isServerA, big) {
+    const base = isServerA ? pA : pB;
+    let p = base + (big ? (isServerA ? clutch : -clutch) : 0);
+    // deep in the match the fitter player starts winning the long ones
+    const fatEdge = clamp((isServerA ? ia.stamina - ib.stamina : ib.stamina - ia.stamina) * 0.000012 * totalPoints, -0.045, 0.045);
+    p = clamp(p + fatEdge, 0.35, 0.90);
+    totalPoints++;
+    const srv = isServerA ? st.A : st.B, retr = isServerA ? st.B : st.A;
+    const sIdx = isServerA ? ia : ib;
+    srv.svPts++; srv.ptsPlayed++; retr.ptsPlayed++;
+    const won = rnd() < p;
+    if (won) {
+      srv.svPtsWon++; srv.ptsWon++;
+      const aceP = clamp((sIdx.aceBase - 68) / 190, 0.02, 0.24) * (surface === 'grass' ? 1.25 : surface === 'clay' ? 0.7 : 1);
+      if (rnd() < aceP) srv.aces++; else if (rnd() < 0.34) srv.winners++;
+    } else {
+      retr.ptsWon++;
+      if (rnd() < 0.055) srv.df++;
+      else if (rnd() < 0.42) retr.winners++; else srv.ue++;
+    }
+    return won;
+  }
+
+  function playGame(isServerA) {
+    let s = 0, r = 0;
+    const srvStats = isServerA ? st.A : st.B, retStats = isServerA ? st.B : st.A;
+    for (;;) {
+      const bp = (r >= 3 && r >= s);                    // break point for the returner
+      const big = bp || (s >= 3 && s > r) || (s >= 3 && r >= 3);
+      if (bp) { srvStats.bpFaced++; }
+      const won = point(isServerA, big);
+      if (won) s++; else { r++; }
+      if (bp && !won) { retStats.bpWon++; }
+      if (s >= 4 && s - r >= 2) return true;
+      if (r >= 4 && r - s >= 2) return false;
+    }
+  }
+
+  function playTiebreak(firstServerA, target) {
+    let a = 0, b = 0, srvA = firstServerA, served = 0;
+    for (;;) {
+      const big = (a >= target - 2 || b >= target - 2);
+      const won = point(srvA, big);
+      if (srvA) { won ? a++ : b++; } else { won ? b++ : a++; }
+      served++;
+      if (served === 1 || served % 2 === 1) srvA = !srvA;   // 1, then every 2
+      if (a >= target && a - b >= 2) return { winner: 'A', a, b };
+      if (b >= target && b - a >= 2) return { winner: 'B', a, b };
+    }
+  }
+
+  const setsNeeded = bestOf === 5 ? 3 : 2;
+  while (setsA < setsNeeded && setsB < setsNeeded) {
+    let ga = 0, gb = 0, tb = null;
+    const isDecider = (setsA === setsNeeded - 1 && setsB === setsNeeded - 1);
+    for (;;) {
+      if (ga === 6 && gb === 6) {
+        const target = (isDecider && finalSetTB) ? 10 : 7;
+        tb = playTiebreak(server === 'A', target);
+        if (tb.winner === 'A') ga++; else gb++;
+        server = (server === 'A') ? 'B' : 'A';   // receiver of the TB serves first next set
+        break;
+      }
+      const serverIsA = server === 'A';
+      const held = playGame(serverIsA);
+      const wonByA = serverIsA ? held : !held;
+      if (wonByA) ga++; else gb++;
+      games++;
+      server = serverIsA ? 'B' : 'A';
+      if (ga >= 6 && ga - gb >= 2) break;
+      if (gb >= 6 && gb - ga >= 2) break;
+    }
+    sets.push({ a: ga, b: gb, tb: tb ? { a: tb.a, b: tb.b } : null });
+    if (ga > gb) setsA++; else setsB++;
+    // swap first server of the next set correctly (server already alternated)
+  }
+
+  const aWon = setsA > setsB;
+  const load = (games * 0.9 + totalPoints * 0.035 + (bestOf === 5 ? 6 : 0)) * 0.45;
+  fatigueA = load * (1 - (ia.stamina - 70) / 260);
+  fatigueB = load * (1 - (ib.stamina - 70) / 260);
+
+  return {
+    winner: aWon ? A : B,
+    loser:  aWon ? B : A,
+    winnerId: aWon ? A.id : B.id,
+    sets,
+    scoreline: sets.map(s => `${s.a}-${s.b}` + (s.tb ? `(${Math.min(s.tb.a, s.tb.b)})` : '')).join(' '),
+    scorelineFor(id) {
+      const flip = (id === B.id);
+      return sets.map(s => (flip ? `${s.b}-${s.a}` : `${s.a}-${s.b}`) + (s.tb ? `(${Math.min(s.tb.a, s.tb.b)})` : '')).join(' ');
+    },
+    stats: st,
+    fatigue: { [A.id]: fatigueA, [B.id]: fatigueB },
+    points: totalPoints,
+    minutes: Math.round(games * 4.1 + totalPoints * 0.22 + 8),
+    pA, pB
+  };
+}
+
+/* --- draws --------------------------------------------------------------- */
+function seedOrder(n) {
+  let arr = [1];
+  while (arr.length < n) {
+    const m = arr.length * 2 + 1;
+    const next = [];
+    arr.forEach(x => { next.push(x, m - x); });
+    arr = next;
+  }
+  return arr;
+}
+
+function buildDraw(field) {
+  // field arrives ranked best-first. Top 8 are placed by seed, rest are drawn.
+  const n = field.length;
+  const order = seedOrder(n);
+  const seeded = field.slice(0, 8);
+  const rest = shuffle(field.slice(8));
+  const pool = seeded.concat(rest);
+  const slots = new Array(n);
+  for (let i = 0; i < n; i++) slots[i] = pool[order[i] - 1];
+  return slots;
+}
+
+/* --- tournament ---------------------------------------------------------- */
+class Tournament {
+  constructor(ev, field, ctx) {
+    this.ev = ev;
+    this.ctx = ctx;                          // { SURFACES, PTS, ROUND_NAMES_32 }
+    this.slots = buildDraw(field);
+    this.rounds = [];                        // [[{a,b,result}]]
+    this.alive = this.slots.slice();
+    this.roundIndex = 0;
+    this.totalRounds = Math.log2(field.length);
+    this.wins = {};                          // playerId -> matches won
+    field.forEach(p => { this.wins[p.id] = 0; });
+    this.champion = null;
+    this.log = [];
+  }
+  roundName(i) {
+    const left = this.totalRounds - i;
+    if (this.ev.cat === 'qual') return left === 1 ? 'Qualifying final' : 'Qualifying round 1';
+    if (left === 1) return 'Final';
+    if (left === 2) return 'Semi-final';
+    if (left === 3) return 'Quarter-final';
+    return 'Round of ' + Math.pow(2, left);
+  }
+  playRound() {
+    if (this.champion) return null;
+    const ms = [];
+    for (let i = 0; i < this.alive.length; i += 2) {
+      const a = this.alive[i], b = this.alive[i + 1];
+      const res = simMatch(a, b, {
+        surface: this.ev.surface, bestOf: this.ev.bestOf, finalSetTB: true
+      });
+      ms.push({ a, b, res, round: this.roundName(this.roundIndex) });
+    }
+    this.rounds.push(ms);
+    ms.forEach(m => {
+      this.wins[m.res.winnerId]++;
+      m.res.winner.season.w++; m.res.winner.career.w++;
+      m.res.loser.season.l++;  m.res.loser.career.l++;
+      m.res.winner.fatigue = clamp(m.res.winner.fatigue + m.res.fatigue[m.res.winner.id], 0, 100);
+      m.res.loser.fatigue  = clamp(m.res.loser.fatigue  + m.res.fatigue[m.res.loser.id], 0, 100);
+    });
+    this.alive = ms.map(m => m.res.winner);
+    this.roundIndex++;
+    if (this.alive.length === 1) this.champion = this.alive[0];
+    return ms;
+  }
+  playAll() { while (!this.champion) this.playRound(); return this.champion; }
+  matchFor(playerId, roundIdx) {
+    const r = this.rounds[roundIdx];
+    if (!r) return null;
+    return r.find(m => m.a.id === playerId || m.b.id === playerId) || null;
+  }
+  awardPoints() {
+    const table = this.ctx.PTS[this.ev.cat];
+    this.slots.forEach(p => {
+      const w = this.wins[p.id];
+      const pts = table[Math.min(w, table.length - 1)];
+      p.res[this.ev.id] = Math.max(p.res[this.ev.id] || 0, pts);
+      const reached = w >= this.totalRounds ? 'Champion'
+        : this.roundName(w);
+      p.history.push({ ev: this.ev.id, name: this.ev.name, result: reached, pts });
+      if (w >= this.totalRounds) {
+        p.career.titles++; p.season.titles++;
+        if (this.ev.cat === 'gs') p.career.slams++;
+        if (this.ev.cat === 'm1000') p.career.masters++;
+      }
+    });
+  }
+}
+
+/* --- round robin for the Tour Finals ------------------------------------- */
+function simTourFinals(ev, field, ctx) {
+  const groups = [[], []];
+  // snake the top 8 into two groups so both are balanced
+  field.forEach((p, i) => groups[[0,1,1,0,0,1,1,0][i]].push(p));
+  const table = {}, rr = [];
+  field.forEach(p => { table[p.id] = { p, w: 0, l: 0, setsW: 0, setsL: 0, pts: 200 }; });
+  groups.forEach((g, gi) => {
+    for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) {
+      const res = simMatch(g[i], g[j], { surface: ev.surface, bestOf: 3 });
+      rr.push({ group: gi, a: g[i], b: g[j], res, round: 'Group ' + (gi === 0 ? 'A' : 'B') });
+      const wid = res.winnerId, lid = res.winner.id === g[i].id ? g[j].id : g[i].id;
+      table[wid].w++; table[lid].l++; table[wid].pts += 200;
+      res.winner.season.w++; res.winner.career.w++;
+      res.loser.season.l++;  res.loser.career.l++;
+    }
+  });
+  const standings = groups.map(g => g.slice().sort((x, y) => table[y.id].w - table[x.id].w || rnd() - 0.5));
+  const sf = [
+    { a: standings[0][0], b: standings[1][1] },
+    { a: standings[1][0], b: standings[0][1] }
+  ].map(m => {
+    const res = simMatch(m.a, m.b, { surface: ev.surface, bestOf: 3 });
+    res.winner.season.w++; res.winner.career.w++; res.loser.season.l++; res.loser.career.l++;
+    table[res.winnerId].pts += 400;
+    return { a: m.a, b: m.b, res, round: 'Semi-final' };
+  });
+  const fin = simMatch(sf[0].res.winner, sf[1].res.winner, { surface: ev.surface, bestOf: 3 });
+  fin.winner.season.w++; fin.winner.career.w++; fin.loser.season.l++; fin.loser.career.l++;
+  table[fin.winnerId].pts += 500;
+  fin.winner.career.titles++; fin.winner.season.titles++; fin.winner.career.finals++;
+  const matches = rr.concat(sf, [{ a: sf[0].res.winner, b: sf[1].res.winner, res: fin, round: 'Final' }]);
+  field.forEach(p => {
+    p.res[ev.id] = table[p.id].pts;
+    p.history.push({ ev: ev.id, name: ev.name, result: p.id === fin.winnerId ? 'Champion' : (table[p.id].w >= 2 ? 'Semi-final' : 'Group stage'), pts: table[p.id].pts });
+  });
+  return { matches, champion: fin.winner, table, groups };
+}
+
+/* --- rankings ------------------------------------------------------------ */
+function rankingPoints(p, CALENDAR) {
+  let t = 0;
+  CALENDAR.forEach(ev => { t += (ev.id in p.res) ? p.res[ev.id] : (p.prev[ev.id] || 0); });
+  return t;
+}
+// order a subset without touching anyone's global rank
+function orderByPoints(players, CALENDAR) {
+  return players.slice()
+    .map(p => ({ p, pts: rankingPoints(p, CALENDAR) }))
+    .sort((a, b) => b.pts - a.pts || a.p.name.localeCompare(b.p.name))
+    .map(r => r.p);
+}
+function rankAll(players, CALENDAR) {
+  const list = players.map(p => ({ p, pts: rankingPoints(p, CALENDAR) }));
+  list.sort((a, b) => b.pts - a.pts || a.p.name.localeCompare(b.p.name));
+  list.forEach((r, i) => { r.p.rank = i + 1; r.p.rankPts = r.pts; if (r.p.career.bestRank > i + 1) r.p.career.bestRank = i + 1; });
+  return list;
+}
+function racePoints(p) { let t = 0; for (const k in p.res) t += p.res[k]; return t; }
+
+/* --- week-to-week upkeep -------------------------------------------------- */
+function passWeeks(players, weeks) {
+  players.forEach(p => {
+    p.fatigue = clamp(p.fatigue - weeks * 13, 0, 100);
+    p.form = clamp(p.form + jitter(0.035), 0.92, 1.08);
+  });
+}
+
+function ageOne(p) {
+  p.age++;
+  const peak = 26;
+  for (const k in p.attrs) {
+    let d;
+    if (p.age <= peak) d = 1.6 + rnd() * 2.2;
+    else if (p.age <= 29) d = -0.2 + rnd() * 1.2;
+    else if (p.age <= 32) d = -1.6 + rnd() * 1.4;
+    else d = -3.4 + rnd() * 1.6;
+    if (k === 'mental') d += 1.1;                      // experience keeps paying
+    if ((k === 'movement' || k === 'stamina') && p.age > 30) d -= 1.2;
+    p.attrs[k] = clamp(Math.round(p.attrs[k] + d), 40, 99);
+  }
+}
+
+const OVR_W = { serve: 0.17, forehand: 0.16, backhand: 0.14, ret: 0.15, movement: 0.13, net: 0.07, stamina: 0.09, mental: 0.09 };
+function overall(p) {
+  let t = 0; for (const k in OVR_W) t += p.attrs[k] * OVR_W[k];
+  return Math.round(t);
+}
+
+/* ============================================================================
+   BASELINE — career layer
+   Owns the season loop: who enters what, qualifying, ranking points, the
+   off-season, and the save file.
+   ==========================================================================*/
+
+const SAVE_KEY = 'baseline.career.v1';
+
+/* --- the builder --------------------------------------------------------- */
+class Builder {
+  constructor(poolRaw, attrKeys) {
+    this.attrKeys = attrKeys;
+    this.pool = shuffle(poolRaw.map((r, i) => ({
+      idx: i, name: r[0], country: r[1], tier: r[2],
+      attrs: { serve: r[3], forehand: r[4], backhand: r[5], ret: r[6], movement: r[7], net: r[8], stamina: r[9], mental: r[10] },
+      signature: r[11]
+    })));
+    this.cursor = 0;
+    this.slots = {};                 // attrKey -> { value, from, tier }
+    this.respins = 3;
+    this.current = null;
+    this.taken = [];                 // log of picks, in order
+  }
+  get filled()    { return this.attrKeys.filter(k => this.slots[k]).length; }
+  get remaining() { return this.attrKeys.filter(k => !this.slots[k]); }
+  get done()      { return this.filled === this.attrKeys.length; }
+  spin() {
+    if (this.done) return null;
+    if (this.cursor >= this.pool.length) { this.pool = shuffle(this.pool); this.cursor = 0; }
+    this.current = this.pool[this.cursor++];
+    return this.current;
+  }
+  respin() {
+    if (this.respins <= 0 || !this.current) return null;
+    this.respins--;
+    return this.spin();
+  }
+  take(attrKey) {
+    if (!this.current || this.slots[attrKey]) return false;
+    this.slots[attrKey] = { value: this.current.attrs[attrKey], from: this.current.name, tier: this.current.tier, signature: this.current.signature };
+    this.taken.push({ attr: attrKey, from: this.current.name, value: this.current.attrs[attrKey] });
+    this.current = null;
+    return true;
+  }
+  attrs() {
+    const a = {};
+    this.attrKeys.forEach(k => { a[k] = this.slots[k] ? this.slots[k].value : 55; });
+    return a;
+  }
+}
+
+/* --- career -------------------------------------------------------------- */
+class Career {
+  constructor(opts) {
+    this.seed = opts.seed || (Date.now() % 2147483647);
+    setSeed(this.seed);
+    this.year = opts.year || 2026;
+    this.eventIndex = 0;
+    this.week = 0;
+    this.messages = [];
+    this.seasonLog = [];
+    this.honours = [];
+    this.injuryWeeks = 0;
+
+    this.user = opts.user;
+    this.tour = buildTour(TOUR_RAW);
+    this.field = buildJourneymen(64, FIRST_NAMES, LAST_NAMES, COUNTRIES);
+    this.players = [this.user].concat(this.tour, this.field);
+
+    // seed the rolling ranking so the pecking order exists on day one and the
+    // rookie has to climb through it
+    // Shares sum to 1 across the calendar, so a player's rolling total lands on
+    // their intended level. The curve is fitted to a real year-end ATP spread:
+    // ~11.9k at No.1, ~3.7k at No.5, ~2.3k at No.10, ~1.2k at No.50.
+    const SHARE = { gs: 0.145, m1000: 0.0333, finals: 0.05, atp500: 0.035 };
+    const seedPoints = (p, base) => {
+      CALENDAR.forEach(ev => {
+        p.prev[ev.id] = Math.round(base * SHARE[ev.cat] * (0.55 + rnd() * 0.9));
+      });
+    };
+    this.tour.forEach((p, i) => seedPoints(p, 900 + 11000 / Math.pow(1 + i * 0.55, 1.15)));
+    this.field.forEach((p, i) => seedPoints(p, Math.max(20, 1000 - i * 14)));
+    CALENDAR.forEach(ev => { this.user.prev[ev.id] = 0; });
+
+    rankAll(this.players, CALENDAR);
+    this.entries = {};                 // eventId -> true/false (user's choice)
+    this.current = null;               // live SeasonEvent
+  }
+
+  get nextEvent() { return CALENDAR[this.eventIndex] || null; }
+  get standings() { return rankAll(this.players, CALENDAR); }
+  raceStandings() {
+    return this.players.map(p => ({ p, pts: racePoints(p) }))
+      .sort((a, b) => b.pts - a.pts).slice(0, 40);
+  }
+
+  say(msg, kind) { this.messages.unshift({ msg, kind: kind || 'info', week: this.week, year: this.year }); this.messages = this.messages.slice(0, 60); }
+
+  /* who turns up ---------------------------------------------------------- */
+  entrantsFor(ev) {
+    const ranked = rankAll(this.players, CALENDAR);
+    const out = [];
+    ranked.forEach(({ p }) => {
+      if (p.isUser) return;                                 // handled separately
+      if (p.fatigue > 84 && rnd() < 0.45) return;           // shut it down
+      if (!ev.mandatory) {
+        const r = p.rank;
+        const chance = r <= 10 ? 0.4 : r <= 30 ? 0.65 : 0.85;
+        if (rnd() > chance) return;
+      } else if (rnd() < 0.04) return;                      // late withdrawal
+      out.push(p);
+    });
+    return out;
+  }
+
+  startEvent(userEnters) {
+    const ev = this.nextEvent;
+    if (!ev) return null;
+    const gap = Math.max(0, ev.week - this.week);
+    passWeeks(this.players, gap);
+    this.week = ev.week;
+    rankAll(this.players, CALENDAR);
+
+    if (ev.cat === 'finals') return this.startFinals(ev, userEnters);
+
+    const pool = this.entrantsFor(ev);
+    const size = ev.draw;
+    let main, qual = null, userInMain = false;
+
+    if (!userEnters) {
+      main = pool.slice(0, size);
+    } else if (this.user.rank <= size - 1) {
+      main = orderByPoints(pool.slice(0, size - 1).concat([this.user]), CALENDAR);
+      userInMain = true;
+    } else {
+      // qualifying: a 4-player mini-draw for the last main-draw seat, against
+      // players around your own ranking rather than the ones who just missed a seed
+      const myPts = rankingPoints(this.user, CALENDAR);
+      let idx = pool.findIndex(p => rankingPoints(p, CALENDAR) <= myPts);
+      if (idx < 0) idx = pool.length;
+      const from = clamp(idx - 8, size - 1, Math.max(size - 1, pool.length - 16));
+      const near = pool.slice(from, from + 16);
+      const rivals = shuffle(near).slice(0, 3);
+      let back = pool.length - 1;
+      while (rivals.length < 3 && back >= 0) { if (!rivals.includes(pool[back])) rivals.push(pool[back]); back--; }
+      qual = new Tournament({ ...ev, draw: 4, bestOf: 3, cat: 'qual' },
+        orderByPoints([this.user].concat(rivals), CALENDAR),
+        { SURFACES, PTS: { qual: [0, 0, 0] }, ROUND_NAMES_32 });
+      main = pool.slice(0, size - 1);
+    }
+
+    this.current = {
+      ev, phase: qual ? 'qual' : 'main', qual, main: null, mainField: main,
+      userInMain, userEnters, roundIdx: 0, finished: false, finals: null
+    };
+    if (!qual) this.buildMain();
+    return this.current;
+  }
+
+  buildMain() {
+    const c = this.current;
+    const field = orderByPoints(c.mainField, CALENDAR);
+    c.main = new Tournament(c.ev, field, { SURFACES, PTS, ROUND_NAMES_32 });
+    c.phase = 'main';
+    c.roundIdx = 0;
+  }
+
+  startFinals(ev, userEnters) {
+    const race = this.raceStandings().filter(r => userEnters || !r.p.isUser).slice(0, 8);
+    const field = race.map(r => r.p);
+    const qualified = field.some(p => p.isUser);
+    const out = simTourFinals(ev, field, { SURFACES });
+    this.current = { ev, phase: 'finals', finals: out, finished: true, userInMain: qualified, userEnters, mainField: field };
+    this.say(`${out.champion.name} wins the ${ev.name}.`, out.champion.isUser ? 'good' : 'info');
+    let userResult = 'Did not qualify';
+    if (qualified) {
+      const row = out.table[this.user.id];
+      userResult = out.champion.isUser ? 'Champion' : (row.w >= 2 ? 'Semi-final' : 'Group stage');
+      this.user.career.prize += out.champion.isUser ? 4800000 : 1200000;
+    }
+    this.seasonLog.push({ ev: ev.id, name: ev.name, surface: ev.surface, result: userResult, pts: this.user.res[ev.id] || 0 });
+    if (out.champion.isUser) this.honours.push({ year: this.year, text: 'Tour Finals champion' });
+    rankAll(this.players, CALENDAR);
+    return this.current;
+  }
+
+  /* one round at a time so the UI can watch the user's match ------------- */
+  advance() {
+    const c = this.current;
+    if (!c || c.finished) return null;
+    if (c.phase === 'qual') {
+      const ms = c.qual.playRound();
+      const userMatch = ms.find(m => m.a.isUser || m.b.isUser) || null;
+      const userThrough = userMatch ? userMatch.res.winnerId === this.user.id : false;
+      if (c.qual.champion) {
+        const qualifier = c.qual.champion;
+        c.mainField = c.mainField.concat([qualifier]);
+        c.userInMain = qualifier.isUser;
+        if (!c.userInMain) this.say(`Lost in qualifying at ${c.ev.name}. No main draw, no points.`, 'bad');
+        else this.say(`Qualified for the ${c.ev.name} main draw.`, 'good');
+        this.buildMain();
+      }
+      return { phase: 'qual', matches: ms, userMatch, userThrough, qualDone: !!c.qual.champion };
+    }
+    const ms = c.main.playRound();
+    const userMatch = ms.find(m => m.a.isUser || m.b.isUser) || null;
+    const userThrough = userMatch ? userMatch.res.winnerId === this.user.id : false;
+    c.roundIdx = c.main.roundIndex;
+    if (userMatch && !userThrough) this.checkInjury();
+    if (c.main.champion) this.finishEvent();
+    return { phase: 'main', matches: ms, userMatch, userThrough, eventDone: !!c.main.champion };
+  }
+
+  simRestOfEvent() {
+    const c = this.current;
+    while (c && !c.finished) {
+      if (c.phase === 'qual' && c.qual && !c.qual.champion) { this.advance(); continue; }
+      if (c.main && !c.main.champion) { this.advance(); continue; }
+      break;
+    }
+    return this.current;
+  }
+
+  finishEvent() {
+    const c = this.current;
+    c.main.awardPoints();
+    c.finished = true;
+    const champ = c.main.champion;
+    const money = { gs: 3000000, m1000: 1100000, atp500: 500000 }[c.ev.cat] || 400000;
+    champ.career.prize += money;
+    const label = champ.isUser ? 'good' : 'info';
+    this.say(`${champ.name} wins ${c.ev.name} (${c.ev.city}).`, label);
+    if (champ.isUser) this.honours.push({ year: this.year, text: `${c.ev.name} champion` });
+    const userWins = c.main.wins[this.user.id];
+    if (userWins !== undefined) {
+      const res = userWins >= c.main.totalRounds ? 'Champion' : c.main.roundName(userWins);
+      this.seasonLog.push({ ev: c.ev.id, name: c.ev.name, surface: c.ev.surface, result: res, pts: this.user.res[c.ev.id] || 0 });
+      this.user.career.prize += Math.round(money * Math.pow(0.55, Math.max(0, c.main.totalRounds - userWins)));
+    } else {
+      this.seasonLog.push({ ev: c.ev.id, name: c.ev.name, surface: c.ev.surface, result: c.userEnters ? 'Lost in qualifying' : 'Did not play', pts: 0 });
+    }
+    rankAll(this.players, CALENDAR);
+  }
+
+  checkInjury() {
+    const u = this.user;
+    const risk = Math.max(0, (u.fatigue - 55) / 100) * 0.20 + (u.age > 31 ? 0.012 : 0.004);
+    if (rnd() < risk) {
+      this.injuryWeeks = 2 + rndInt(5);
+      const kinds = ['a wrist strain', 'an abdominal tear', 'a rolled ankle', 'a hip flexor problem', 'a back spasm', 'shoulder soreness'];
+      this.say(`You picked up ${pick(kinds)} — out for ${this.injuryWeeks} weeks.`, 'bad');
+      u.fatigue = Math.min(100, u.fatigue + 12);
+    }
+  }
+
+  closeEvent() {
+    this.eventIndex++;
+    this.current = null;
+    if (this.injuryWeeks > 0) {
+      // burn through events that fall inside the lay-off
+      while (this.injuryWeeks > 0 && this.nextEvent) {
+        const gapWeeks = this.nextEvent.week - this.week;
+        if (gapWeeks >= this.injuryWeeks) { this.injuryWeeks = 0; break; }
+        this.entries[this.nextEvent.id] = false;
+        this.seasonLog.push({ ev: this.nextEvent.id, name: this.nextEvent.name, surface: this.nextEvent.surface, result: 'Injured', pts: 0 });
+        this.say(`Missed ${this.nextEvent.name} through injury.`, 'bad');
+        this.simEventWithoutUser(this.nextEvent);
+        this.injuryWeeks -= gapWeeks;
+        this.eventIndex++;
+      }
+      this.injuryWeeks = 0;
+    }
+    return this.nextEvent;
+  }
+
+  simEventWithoutUser(ev) {
+    passWeeks(this.players, Math.max(0, ev.week - this.week));
+    this.week = ev.week;
+    if (ev.cat === 'finals') { this.startFinals(ev, false); this.current = null; return; }
+    const pool = this.entrantsFor(ev).slice(0, ev.draw);
+    const t = new Tournament(ev, pool, { SURFACES, PTS, ROUND_NAMES_32 });
+    t.playAll(); t.awardPoints();
+    this.say(`${t.champion.name} wins ${ev.name}.`, 'info');
+    rankAll(this.players, CALENDAR);
+  }
+
+  get seasonOver() { return this.eventIndex >= CALENDAR.length; }
+
+  endSeason() {
+    const table = rankAll(this.players, CALENDAR);
+    const no1 = table[0].p;
+    no1.career.weeksNo1 += 52;
+    const summary = {
+      year: this.year,
+      no1: no1.name,
+      userRank: this.user.rank,
+      userPts: this.user.rankPts,
+      titles: this.user.season.titles,
+      w: this.user.season.w, l: this.user.season.l,
+      log: this.seasonLog.slice(),
+      top10: table.slice(0, 10).map(r => ({ name: r.p.name, pts: r.pts, isUser: r.p.isUser }))
+    };
+    if (no1.isUser) this.honours.push({ year: this.year, text: 'Year-end world No. 1' });
+    return summary;
+  }
+
+  newSeason(trainingSpend) {
+    this.players.forEach(p => {
+      p.prev = Object.assign({}, p.prev, p.res);
+      p.res = {};
+      p.season = { w: 0, l: 0, titles: 0 };
+      p.history = [];
+      ageOne(p);
+      p.fatigue = 0;
+      p.form = 1;
+    });
+    if (trainingSpend) {
+      for (const k in trainingSpend) {
+        this.user.attrs[k] = clamp(this.user.attrs[k] + trainingSpend[k], 40, 99);
+      }
+    }
+    this.year++;
+    this.eventIndex = 0;
+    this.week = 0;
+    this.seasonLog = [];
+    this.entries = {};
+    this.current = null;
+    rankAll(this.players, CALENDAR);
+  }
+
+  trainingPoints() {
+    const a = this.user.age;
+    return a <= 23 ? 6 : a <= 26 ? 5 : a <= 29 ? 4 : 3;
+  }
+
+  /* --- save/load --------------------------------------------------------- */
+  toJSON() {
+    const slim = p => ({
+      id: p.id, name: p.name, country: p.country, hand: p.hand, bh: p.bh, age: p.age,
+      attrs: p.attrs, isUser: p.isUser, form: p.form, fatigue: p.fatigue,
+      res: p.res, prev: p.prev, career: p.career, season: p.season
+    });
+    return {
+      v: 1, seed: this.seed, year: this.year, eventIndex: this.eventIndex, week: this.week,
+      messages: this.messages, seasonLog: this.seasonLog, honours: this.honours,
+      entries: this.entries, injuryWeeks: this.injuryWeeks,
+      user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim)
+    };
+  }
+  save() {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.toJSON())); return true; }
+    catch (e) { return false; }
+  }
+  static hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
+  static clear()   { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+  static load() {
+    let raw; try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return null; }
+    if (!raw) return null;
+    let d; try { d = JSON.parse(raw); } catch (e) { return null; }
+    const revive = o => {
+      const p = makePlayer(o.name, o.country, o.attrs, { id: o.id, hand: o.hand, bh: o.bh, age: o.age, isUser: o.isUser });
+      p.form = o.form; p.fatigue = o.fatigue; p.res = o.res || {}; p.prev = o.prev || {};
+      p.career = o.career; p.season = o.season; p.history = [];
+      return p;
+    };
+    const c = Object.create(Career.prototype);
+    c.seed = d.seed; setSeed(d.seed + d.eventIndex * 977 + d.year);
+    c.year = d.year; c.eventIndex = d.eventIndex; c.week = d.week;
+    c.messages = d.messages || []; c.seasonLog = d.seasonLog || []; c.honours = d.honours || [];
+    c.entries = d.entries || {}; c.injuryWeeks = d.injuryWeeks || 0;
+    c.user = revive(d.user);
+    c.tour = d.tour.map(revive);
+    c.field = d.field.map(revive);
+    c.players = [c.user].concat(c.tour, c.field);
+    c.current = null;
+    rankAll(c.players, CALENDAR);
+    return c;
+  }
+}
+
+/* ============================================================================
+   BASELINE — interface
+   ==========================================================================*/
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+
+let career = null;
+let builder = null;
+let identity = { name: '', country: 'AUS', age: 19, hand: 'R', bh: 2 };
+let rankMode = 'live';
+let busy = false;
+
+/* ---------- chrome ------------------------------------------------------- */
+function show(id) {
+  $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function toast(msg, kind) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (kind || '');
+  el.textContent = msg;
+  $('#toast-wrap').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .4s'; }, 2600);
+  setTimeout(() => el.remove(), 3100);
+}
+function vClass(v) { return v >= 93 ? 'v-elite' : v >= 86 ? 'v-great' : v >= 76 ? 'v-ok' : 'v-meh'; }
+function surfTag(s) { return `<span class="surf-tag s-${s}">${SURFACES[s].label}</span>`; }
+function catLabel(c) { return { gs: 'Grand Slam', m1000: 'Masters 1000', atp500: 'ATP 500', finals: 'Tour Finals' }[c] || c; }
+function fmtPts(n) { return n.toLocaleString('en-US'); }
+
+/* ---------- home --------------------------------------------------------- */
+$('#btn-new').addEventListener('click', () => {
+  if (Career.hasSave() && !confirm('Starting a new build wipes your saved career. Continue?')) return;
+  show('screen-identity');
+  $('#in-name').focus();
+});
+$('#btn-continue').addEventListener('click', () => {
+  const c = Career.load();
+  if (!c) { toast('Save file could not be read', 'bad'); return; }
+  career = c;
+  renderHub(); show('screen-hub');
+});
+$$('[data-goto]').forEach(b => b.addEventListener('click', () => show(b.dataset.goto)));
+if (Career.hasSave()) $('#btn-continue').hidden = false;
+
+/* ---------- identity ----------------------------------------------------- */
+(function initIdentity() {
+  $('#in-country').innerHTML = COUNTRIES.map(c => `<option value="${c}"${c === 'AUS' ? ' selected' : ''}>${c}</option>`).join('');
+  const ages = []; for (let a = 16; a <= 24; a++) ages.push(a);
+  $('#in-age').innerHTML = ages.map(a => `<option value="${a}"${a === 19 ? ' selected' : ''}>${a}</option>`).join('');
+  $$('.seg').forEach(seg => seg.addEventListener('click', e => {
+    const b = e.target.closest('.seg-btn'); if (!b) return;
+    $$('.seg-btn', seg).forEach(x => x.classList.toggle('active', x === b));
+    if (seg.id === 'seg-rank') { rankMode = b.dataset.v; renderRankings(); }
+  }));
+})();
+
+$('#btn-to-builder').addEventListener('click', () => {
+  identity.name    = ($('#in-name').value || '').trim() || 'Your Player';
+  identity.country = $('#in-country').value;
+  identity.age     = parseInt($('#in-age').value, 10);
+  identity.hand    = $('.seg-btn.active', $('#seg-hand')).dataset.v;
+  identity.bh      = parseInt($('.seg-btn.active', $('#seg-bh')).dataset.v, 10);
+  builder = new Builder(POOL_RAW, ATTR_KEYS);
+  renderBuilder();
+  show('screen-builder');
+});
+
+/* ---------- builder ------------------------------------------------------ */
+function renderBuilder() {
+  $('#slot-list').innerHTML = ATTRS.map(a => {
+    const s = builder.slots[a.key];
+    return `<li class="slot ${s ? 'filled' : ''}">
+      <span class="sk">${a.short}</span>
+      <span class="sv ${s ? vClass(s.value) : ''}">${s ? s.value : '—'}</span>
+      <span class="sf ${s ? '' : 'empty'}">${s ? esc(s.from) : 'open'}</span>
+    </li>`;
+  }).join('');
+  const filledVals = ATTRS.map(a => builder.slots[a.key] ? builder.slots[a.key].value : null).filter(v => v !== null);
+  $('#ovr-preview').textContent = filledVals.length
+    ? Math.round(filledVals.reduce((x, y) => x + y, 0) / filledVals.length) + (builder.done ? '' : '*')
+    : '—';
+  $('#respin-pips').innerHTML = [0, 1, 2].map(i => `<span class="pip ${i < builder.respins ? '' : 'spent'}"></span>`).join('');
+  $('#respin-count').textContent = `(${builder.respins})`;
+  $('#btn-respin').disabled = builder.respins <= 0;
+}
+
+function renderCard(p) {
+  $('#spin-empty').hidden = true;
+  $('#spin-card').hidden = false;
+  const tierWord = { legend: 'legend', spec: 'specialist', current: 'on tour' }[p.tier] || p.tier;
+  $('#card-tier').textContent = tierWord;
+  $('#card-tier').className = 'tier-tag ' + p.tier;
+  $('#card-name').textContent = p.name;
+  $('#card-country').textContent = p.country;
+  $('#card-sig').textContent = '“' + p.signature + '”';
+  $('#attr-choices').innerHTML = ATTRS.map(a => {
+    const taken = !!builder.slots[a.key];
+    const v = p.attrs[a.key];
+    return `<button class="attr-btn" data-k="${a.key}" ${taken ? 'disabled' : ''} title="${esc(a.blurb)}">
+      <span class="v ${vClass(v)}">${v}</span>
+      <span class="k">${a.label}</span>
+    </button>`;
+  }).join('');
+  $('#spin-card').classList.remove('rolling');
+  void $('#spin-card').offsetWidth;
+  $('#spin-card').classList.add('rolling');
+}
+
+async function doSpin(isRespin) {
+  if (busy) return;
+  busy = true;
+  $('#btn-spin').disabled = true; $('#btn-respin').disabled = true;
+  const target = isRespin ? builder.respin() : builder.spin();
+  if (!target) { busy = false; return; }
+  // roll through a few names before settling
+  const reel = shuffle(builder.pool).slice(0, 7);
+  $('#spin-empty').hidden = true;
+  $('#spin-card').hidden = false;
+  for (let i = 0; i < reel.length; i++) {
+    $('#card-name').textContent = reel[i].name;
+    $('#card-country').textContent = reel[i].country;
+    $('#card-sig').textContent = '';
+    $('#attr-choices').innerHTML = '';
+    $('#card-tier').textContent = '···';
+    $('#card-tier').className = 'tier-tag';
+    await sleep(60 + i * 26);
+  }
+  renderCard(target);
+  renderBuilder();
+  busy = false;
+}
+
+$('#btn-spin').addEventListener('click', () => doSpin(false));
+$('#btn-respin').addEventListener('click', () => {
+  if (builder.respins <= 0) return;
+  doSpin(true);
+});
+$('#attr-choices').addEventListener('click', e => {
+  const b = e.target.closest('.attr-btn');
+  if (!b || b.disabled || busy) return;
+  const key = b.dataset.k;
+  const label = ATTRS.find(a => a.key === key).label;
+  const from = builder.current.name;
+  builder.take(key);
+  toast(`${label} taken from ${from}`, 'good');
+  renderBuilder();
+  if (builder.done) { revealPlayer(); return; }
+  $('#spin-card').hidden = true;
+  $('#spin-empty').hidden = false;
+  $('#spin-empty').querySelector('p').textContent =
+    `${builder.remaining.length} slot${builder.remaining.length === 1 ? '' : 's'} left: ` +
+    builder.remaining.map(k => ATTRS.find(a => a.key === k).label).join(', ') + '.';
+  $('#btn-spin').disabled = false;
+  $('#btn-spin').textContent = 'Spin again';
+});
+
+/* ---------- reveal ------------------------------------------------------- */
+function playerCardHTML(p, opts) {
+  opts = opts || {};
+  const ovr = overall(p);
+  const rows = ATTRS.map(a => {
+    const v = p.attrs[a.key];
+    const src = opts.sources && opts.sources[a.key];
+    return `<div class="bar-row">
+        <span class="bl">${a.label}</span>
+        <span class="bar-track"><span class="bar-fill" style="width:${(v - 35) / 0.64}%"></span></span>
+        <span class="bv ${vClass(v)}">${v}</span>
+      </div>${src ? `<div class="bar-from">from ${esc(src.from)}</div>` : ''}`;
+  }).join('');
+  return `<div class="pcard">
+    <div class="pcard-top">
+      <div>
+        <div class="pcard-name">${esc(p.name)}</div>
+        <div class="pcard-meta">${p.country} · ${p.age} yrs · ${p.hand === 'L' ? 'Left' : 'Right'}-handed · ${p.bh === 1 ? 'one' : 'two'}-handed backhand</div>
+      </div>
+      <div class="pcard-ovr"><b>${ovr}</b><span>Overall</span></div>
+    </div>
+    <div class="bars">${rows}</div>
+  </div>`;
+}
+
+function makeUserPlayer() {
+  return makePlayer(identity.name, identity.country, builder.attrs(), {
+    id: 'user', isUser: true, hand: identity.hand, bh: identity.bh, age: identity.age
+  });
+}
+
+function revealPlayer() {
+  const p = makeUserPlayer();
+  $('#reveal-card').innerHTML = playerCardHTML(p, { sources: builder.slots });
+  show('screen-reveal');
+  requestAnimationFrame(() => $$('.bar-fill').forEach(b => { const w = b.style.width; b.style.width = '0'; requestAnimationFrame(() => b.style.width = w); }));
+}
+$('#btn-rebuild').addEventListener('click', () => {
+  builder = new Builder(POOL_RAW, ATTR_KEYS);
+  renderBuilder();
+  $('#spin-card').hidden = true; $('#spin-empty').hidden = false;
+  $('#btn-spin').disabled = false; $('#btn-spin').textContent = 'Spin';
+  $('#spin-empty').querySelector('p').textContent = 'Eight slots. Eight different players. Pick the skill you want off each one.';
+  show('screen-builder');
+});
+$('#btn-start-career').addEventListener('click', () => {
+  career = new Career({ user: makeUserPlayer(), year: 2026 });
+  career.say(`${career.user.name} turns pro.`, 'good');
+  career.save();
+  renderHub(); show('screen-hub');
+});
+
+/* ---------- hub ---------------------------------------------------------- */
+function renderHub() {
+  const u = career.user;
+  const ovr = overall(u);
+  $('#hub-header').innerHTML = `
+    <div>
+      <div class="hh-name">${esc(u.name)}</div>
+      <div class="hh-sub">${u.country} · ${u.age} yrs · OVR ${ovr} · ${career.year} season</div>
+    </div>
+    <div class="hh-stats">
+      <div class="hh-stat"><b>${u.rank}</b><span>Rank</span></div>
+      <div class="hh-stat"><b>${fmtPts(u.rankPts)}</b><span>Points</span></div>
+      <div class="hh-stat"><b>${u.season.w}-${u.season.l}</b><span>Season</span></div>
+      <div class="hh-stat"><b>${u.career.titles}</b><span>Titles</span></div>
+      <div class="hh-stat"><b>${u.career.slams}</b><span>Slams</span></div>
+      <div class="hh-stat meter">
+        <div class="meter-lab"><span>Form</span><span>${Math.round((u.form - 0.9) * 500)}%</span></div>
+        <span class="bar-track"><span class="bar-fill fill-form" style="width:${Math.round((u.form - 0.9) * 500)}%"></span></span>
+        <div class="meter-lab" style="margin-top:8px"><span>Fatigue</span><span>${Math.round(u.fatigue)}%</span></div>
+        <span class="bar-track"><span class="bar-fill fill-fat" style="width:${Math.round(u.fatigue)}%"></span></span>
+      </div>
+    </div>`;
+  $('#hub-year').textContent = career.year;
+  $('#ovr-sub').textContent = 'OVR ' + ovr;
+  $('#hub-attrs').innerHTML = '<div class="bars">' + ATTRS.map(a => {
+    const v = u.attrs[a.key];
+    return `<div class="bar-row">
+      <span class="bl">${a.label}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${(v - 35) / 0.64}%"></span></span>
+      <span class="bv ${vClass(v)}">${v}</span>
+    </div>`;
+  }).join('') + '</div>' +
+  (career.honours.length ? '<ul class="honours">' + career.honours.slice(-6).map(x => `<li>${x.year} · ${esc(x.text)}</li>`).join('') + '</ul>' : '');
+  renderCalendar();
+  renderRankings();
+  $('#news-list').innerHTML = career.messages.slice(0, 14)
+    .map(m => `<li class="${m.kind}">${esc(m.msg)}</li>`).join('') || '<li>Season not started.</li>';
+}
+
+function renderCalendar() {
+  const done = career.eventIndex;
+  $('#cal-list').innerHTML = CALENDAR.map((ev, i) => {
+    const logged = career.seasonLog.find(l => l.ev === ev.id);
+    const isNext = i === done;
+    const cls = i < done ? 'past' : isNext ? 'next' : '';
+    let right = '';
+    if (logged) {
+      right = `<div class="cal-res ${logged.result === 'Champion' ? 'win' : ''}">
+                 <b>${logged.pts ? fmtPts(logged.pts) : '—'}</b>${esc(logged.result)}</div>`;
+    } else if (isNext) {
+      right = `<div class="cal-actions">
+          <button class="btn btn-primary" data-enter="${ev.id}">Enter</button>
+          ${ev.cat === 'finals' ? '' : `<button class="btn btn-ghost" data-skip="${ev.id}">Skip</button>`}
+        </div>`;
+    }
+    return `<li class="cal-row ${cls}">
+      <span class="cal-wk">WK ${ev.week}</span>
+      <div>
+        <div class="cal-name">${esc(ev.name)}</div>
+        <div class="cal-sub">${surfTag(ev.surface)}<span class="${ev.cat === 'gs' ? 'cat-gs' : ''}">${catLabel(ev.cat)}</span><span>${esc(ev.city)}</span>${ev.bestOf === 5 ? '<span>best of 5</span>' : ''}</div>
+      </div>
+      ${right}
+    </li>`;
+  }).join('');
+
+  $$('[data-enter]').forEach(b => b.addEventListener('click', () => openEvent(true)));
+  $$('[data-skip]').forEach(b => b.addEventListener('click', () => {
+    const ev = career.nextEvent;
+    career.startEvent(false);
+    career.simRestOfEvent();
+    career.say(`You sat out ${ev.name}. Legs feel better for it.`, 'info');
+    toast(`Skipped ${ev.name}`);
+    afterEvent();
+  }));
+}
+
+function renderRankings() {
+  if (!career) return;
+  const rows = rankMode === 'live'
+    ? career.standings.slice(0, 25).map(r => ({ p: r.p, pts: r.pts }))
+    : career.raceStandings().slice(0, 25);
+  const me = career.user;
+  let html = rows.map((r, i) => `<li class="rank-row ${r.p.isUser ? 'me' : ''}">
+      <span class="rn">${i + 1}</span>
+      <span class="pn"><span class="flag">${r.p.country}</span>${esc(r.p.name)}</span>
+      <span class="pp">${fmtPts(r.pts)}</span>
+    </li>`).join('');
+  if (!rows.some(r => r.p.isUser)) {
+    const pts = rankMode === 'live' ? me.rankPts : racePoints(me);
+    const pos = rankMode === 'live' ? me.rank : career.raceStandings().findIndex(r => r.p.isUser) + 1;
+    html += `<li class="rank-row me"><span class="rn">${pos > 0 ? pos : '—'}</span>
+      <span class="pn"><span class="flag">${me.country}</span>${esc(me.name)}</span>
+      <span class="pp">${fmtPts(pts)}</span></li>`;
+  }
+  $('#rank-list').innerHTML = html;
+}
+
+/* ---------- event -------------------------------------------------------- */
+function openEvent(userEnters) {
+  career.startEvent(userEnters);
+  renderEventHeader();
+  $('#match-view').innerHTML = '';
+  renderBracket();
+  if (career.current.phase === 'finals') { renderFinals(); show('screen-event'); return; }
+  if (!career.current.userInMain && career.current.phase === 'main' && !career.current.qual) {
+    // user isn't in this draw at all
+    simThroughNoUser();
+  } else {
+    $('#ev-actions').innerHTML = `<button class="btn btn-primary btn-lg" id="btn-play">${career.current.phase === 'qual' ? 'Play qualifying' : 'Play first round'}</button>`;
+    $('#btn-play').addEventListener('click', playRound);
+    $('#match-view').innerHTML = `<div class="round-label">${career.current.phase === 'qual'
+      ? `Ranked #${career.user.rank} — you have to qualify` : 'Main draw'}</div>
+      <p style="text-align:center;color:var(--muted)">Draw is out. ${career.current.phase === 'qual'
+        ? 'Two wins gets you into the main draw.' : 'Win five matches and the trophy is yours.'}</p>`;
+  }
+  show('screen-event');
+}
+
+function renderEventHeader() {
+  const ev = career.current.ev;
+  $('#ev-header').innerHTML = `
+    <div>
+      <h2>${esc(ev.name)}</h2>
+      <div class="ev-meta">${surfTag(ev.surface)}<span>${catLabel(ev.cat)}</span><span>${esc(ev.city)}</span><span>Week ${ev.week}</span><span>Best of ${ev.bestOf}</span></div>
+    </div>`;
+  $('#draw-sub').textContent = career.current.phase === 'qual' ? 'Qualifying' : `${career.current.ev.draw} draw`;
+}
+
+async function playRound() {
+  if (busy) return;
+  busy = true;
+  $('#ev-actions').innerHTML = '';
+  const out = career.advance();
+  if (!out) { busy = false; return; }
+  const um = out.userMatch;
+  if (um) {
+    await revealMatch(um, out);
+  } else {
+    $('#match-view').innerHTML = `<div class="round-label">Round complete</div>`;
+    showOtherResults(out.matches, null);
+  }
+  renderBracket();
+  renderEventActions(out);
+  busy = false;
+}
+
+async function revealMatch(m, out) {
+  const meIsA = m.a.isUser;
+  const me = meIsA ? m.a : m.b, them = meIsA ? m.b : m.a;
+  const res = m.res;
+  const mv = $('#match-view');
+  mv.innerHTML = `
+    <div class="round-label">${esc(m.round)}</div>
+    <div class="matchup">
+      <div class="mp you"><div class="mp-name">${esc(me.name)}</div><div class="mp-sub">${me.country} · #${me.rank || '—'} · OVR ${overall(me)}</div></div>
+      <div class="vs">VS</div>
+      <div class="mp"><div class="mp-name">${esc(them.name)}</div><div class="mp-sub">${them.country} · #${them.rank || '—'} · OVR ${overall(them)}</div></div>
+    </div>
+    <div class="score-strip" id="score-strip"></div>
+    <div id="match-outcome"></div>`;
+  const strip = $('#score-strip');
+  for (let i = 0; i < res.sets.length; i++) {
+    await sleep(620);
+    const s = res.sets[i];
+    const mine = meIsA ? s.a : s.b, theirs = meIsA ? s.b : s.a;
+    const tb = s.tb ? `<sup>${Math.min(s.tb.a, s.tb.b)}</sup>` : '';
+    const box = document.createElement('div');
+    box.className = 'set-box ' + (mine > theirs ? 'won' : '');
+    box.innerHTML = `<div class="sg">${mine}–${theirs}${tb}</div><div class="sl">Set ${i + 1}</div>`;
+    strip.appendChild(box);
+  }
+  await sleep(420);
+  const won = res.winnerId === me.id;
+  const ms = meIsA ? res.stats.A : res.stats.B, ts = meIsA ? res.stats.B : res.stats.A;
+  const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '—';
+  $('#match-outcome').innerHTML = `
+    <div class="match-result ${won ? 'win' : 'loss'}">${won ? 'You win' : 'You lose'} · ${res.minutes} minutes</div>
+    <table class="stat-table">
+      <tr><td>${ms.aces}</td><td>Aces</td><td>${ts.aces}</td></tr>
+      <tr><td>${ms.df}</td><td>Double faults</td><td>${ts.df}</td></tr>
+      <tr><td>${pct(ms.svPtsWon, ms.svPts)}</td><td>Serve points won</td><td>${pct(ts.svPtsWon, ts.svPts)}</td></tr>
+      <tr><td>${ms.bpWon}/${ts.bpFaced}</td><td>Break points</td><td>${ts.bpWon}/${ms.bpFaced}</td></tr>
+      <tr><td>${ms.winners}</td><td>Winners</td><td>${ts.winners}</td></tr>
+      <tr><td>${ms.ptsWon}</td><td>Total points</td><td>${ts.ptsWon}</td></tr>
+    </table>`;
+  showOtherResults(out.matches, me.id);
+}
+
+function showOtherResults(matches, meId) {
+  const others = matches.filter(m => m.a.id !== meId && m.b.id !== meId).slice(0, 8);
+  if (!others.length) return;
+  const html = `<div class="other-results"><h4>Elsewhere in the draw</h4>${others.map(m => {
+    const w = m.res.winner, l = m.res.loser;
+    return `<div class="orow"><span><b>${esc(w.name)}</b> d. ${esc(l.name)}</span><span>${m.res.scorelineFor(w.id)}</span></div>`;
+  }).join('')}</div>`;
+  $('#match-view').insertAdjacentHTML('beforeend', html);
+}
+
+function renderEventActions(out) {
+  const c = career.current;
+  const box = $('#ev-actions');
+  const backBtn = `<button class="btn btn-ghost" id="btn-back-hub">Back to the tour</button>`;
+
+  if (c.phase === 'qual' && !c.qual.champion) {
+    box.innerHTML = `<button class="btn btn-primary btn-lg" id="btn-play">Play qualifying final</button>`;
+  } else if (out && out.qualDone && !c.userInMain) {
+    box.innerHTML = `<button class="btn btn-primary" id="btn-sim">Watch the main draw</button>` + backBtn;
+  } else if (c.main && c.main.champion) {
+    box.innerHTML = backBtn;
+    announceEventEnd();
+  } else if (out && out.userMatch && !out.userThrough) {
+    box.innerHTML = `<button class="btn btn-primary" id="btn-sim">Play out the rest</button>` + backBtn;
+  } else if (c.main && !c.main.champion) {
+    const nextName = c.main.roundName(c.main.roundIndex);
+    box.innerHTML = `<button class="btn btn-primary btn-lg" id="btn-play">Play ${nextName.toLowerCase()}</button>`;
+  } else {
+    box.innerHTML = backBtn;
+  }
+  if ($('#btn-play')) $('#btn-play').addEventListener('click', playRound);
+  if ($('#btn-sim'))  $('#btn-sim').addEventListener('click', simThrough);
+  if ($('#btn-back-hub')) $('#btn-back-hub').addEventListener('click', afterEvent);
+}
+
+async function simThrough() {
+  if (busy) return;
+  busy = true;
+  $('#ev-actions').innerHTML = '';
+  career.simRestOfEvent();
+  renderBracket();
+  announceEventEnd();
+  $('#ev-actions').innerHTML = `<button class="btn btn-ghost" id="btn-back-hub">Back to the tour</button>`;
+  $('#btn-back-hub').addEventListener('click', afterEvent);
+  busy = false;
+}
+
+function simThroughNoUser() {
+  career.simRestOfEvent();
+  renderBracket();
+  announceEventEnd();
+  $('#ev-actions').innerHTML = `<button class="btn btn-ghost" id="btn-back-hub">Back to the tour</button>`;
+  $('#btn-back-hub').addEventListener('click', afterEvent);
+}
+
+function announceEventEnd() {
+  const c = career.current;
+  if (!c.main || !c.main.champion) return;
+  const champ = c.main.champion;
+  const fin = c.main.rounds[c.main.rounds.length - 1][0];
+  const wins = c.main.wins[career.user.id];
+  const mine = wins === undefined ? null : (wins >= c.main.totalRounds ? 'Champion' : c.main.roundName(wins));
+  $('#match-view').insertAdjacentHTML('beforeend', `
+    <div class="other-results">
+      <h4>Final</h4>
+      <div class="orow"><span><b>${esc(champ.name)}</b> d. ${esc(fin.res.loser.name)}</span><span>${fin.res.scorelineFor(champ.id)}</span></div>
+      ${mine ? `<div class="orow" style="margin-top:8px"><span>Your run</span><span><b>${esc(mine)}</b> · ${fmtPts(career.user.res[c.ev.id] || 0)} pts</span></div>` : ''}
+    </div>`);
+}
+
+function renderFinals() {
+  const c = career.current, f = c.finals;
+  const rows = f.matches.map(m => `<div class="orow"><span>${esc(m.round)}: <b>${esc(m.res.winner.name)}</b> d. ${esc(m.res.loser.name)}</span><span>${m.res.scorelineFor(m.res.winner.id)}</span></div>`).join('');
+  $('#match-view').innerHTML = `
+    <div class="round-label">Round robin · top 8 of the race</div>
+    ${c.userInMain ? '' : '<p style="text-align:center;color:var(--muted);margin-bottom:14px">You did not qualify — top eight only.</p>'}
+    <div class="matchup"><div class="mp you"><div class="mp-name">${esc(f.champion.name)}</div><div class="mp-sub">Tour Finals champion</div></div></div>
+    <div class="other-results">${rows}</div>`;
+  $('#ev-actions').innerHTML = `<button class="btn btn-ghost" id="btn-back-hub">Back to the tour</button>`;
+  $('#btn-back-hub').addEventListener('click', afterEvent);
+  $('#bracket').innerHTML = '';
+}
+
+function renderBracket() {
+  const c = career.current;
+  if (!c) return;
+  const t = c.phase === 'qual' ? c.qual : c.main;
+  $('#draw-sub').textContent = c.phase === 'qual' ? 'Qualifying' : c.ev.draw + ' draw';
+  if (!t) { $('#bracket').innerHTML = ''; return; }
+  const meId = career.user.id;
+  const cols = t.rounds.map((round, ri) => {
+    const cells = round.map(m => {
+      const w = m.res.winner, l = m.res.loser;
+      const setsWon = p => m.res.sets.filter(s => (p.id === m.a.id ? s.a > s.b : s.b > s.a)).length;
+      const line = (p, isW) => `<div class="bp ${isW ? 'w' : ''} ${p.id === meId ? 'me' : ''}">
+          <span class="nm">${esc(p.name)}</span><span class="bs">${setsWon(p)}</span>
+        </div>`;
+      return `<div class="bmatch">${line(m.a, m.a.id === w.id)}${line(m.b, m.b.id === w.id)}</div>`;
+    }).join('');
+    return `<div class="bcol"><h5>${t.roundName(ri)}</h5>${cells}</div>`;
+  });
+  if (!t.champion) {
+    const pend = [];
+    for (let i = 0; i < t.alive.length; i += 2) {
+      const a = t.alive[i], b = t.alive[i + 1];
+      pend.push(`<div class="bmatch">
+        <div class="bp ${a.id === meId ? 'me' : ''}"><span class="nm">${esc(a.name)}</span><span class="bs">–</span></div>
+        <div class="bp ${b && b.id === meId ? 'me' : ''}"><span class="nm">${b ? esc(b.name) : '—'}</span><span class="bs">–</span></div>
+      </div>`);
+    }
+    if (pend.length) cols.push(`<div class="bcol"><h5>${t.roundName(t.roundIndex)}</h5>${pend.join('')}</div>`);
+  } else {
+    cols.push(`<div class="bcol"><h5>Champion</h5><div class="bmatch"><div class="bp w ${t.champion.id === meId ? 'me' : ''}"><span class="nm">${esc(t.champion.name)}</span><span class="bs">🏆</span></div></div></div>`);
+  }
+  $('#bracket').innerHTML = cols.join('');
+}
+
+function afterEvent() {
+  career.closeEvent();
+  career.save();
+  if (career.seasonOver) { renderSeasonEnd(); show('screen-season-end'); return; }
+  renderHub(); show('screen-hub');
+}
+
+/* ---------- season end --------------------------------------------------- */
+let pendingSummary = null;
+function renderSeasonEnd() {
+  const s = career.endSeason();
+  pendingSummary = s;
+  career.save();
+  const u = career.user;
+  const rows = s.log.map(l => `<tr class="${l.result === 'Champion' ? 'hl' : ''}">
+      <td>${esc(l.name)}</td><td>${SURFACES[l.surface].label}</td>
+      <td>${esc(l.result)}</td><td style="text-align:right">${l.pts ? fmtPts(l.pts) : '—'}</td></tr>`).join('');
+  const top = s.top10.map((t, i) => `<tr class="${t.isUser ? 'hl' : ''}">
+      <td>${i + 1}</td><td>${esc(t.name)}</td><td style="text-align:right">${fmtPts(t.pts)}</td></tr>`).join('');
+  $('#season-end-body').innerHTML = `
+    <h2 class="screen-title">${s.year} season review</h2>
+    <div class="summary-grid">
+      <div class="sum-tile"><b>#${s.userRank}</b><span>Year-end rank</span></div>
+      <div class="sum-tile"><b>${fmtPts(s.userPts)}</b><span>Points</span></div>
+      <div class="sum-tile"><b>${s.w}-${s.l}</b><span>Win-loss</span></div>
+      <div class="sum-tile"><b>${s.titles}</b><span>Titles</span></div>
+      <div class="sum-tile"><b>${u.career.slams}</b><span>Career slams</span></div>
+      <div class="sum-tile"><b>$${(u.career.prize / 1e6).toFixed(1)}m</b><span>Career prize</span></div>
+    </div>
+    <p style="color:var(--muted);margin-bottom:16px">World No. 1: <strong style="color:var(--txt)">${esc(s.no1)}</strong></p>
+    ${career.honours.length ? `<ul class="honours">${career.honours.map(h => `<li>${h.year} · ${esc(h.text)}</li>`).join('')}</ul>` : ''}
+    <h3 style="margin:26px 0 6px;font-size:20px;text-transform:uppercase;letter-spacing:.06em">Your season</h3>
+    <table class="season-table"><thead><tr><th>Event</th><th>Surface</th><th>Result</th><th style="text-align:right">Pts</th></tr></thead><tbody>${rows}</tbody></table>
+    <h3 style="margin:26px 0 6px;font-size:20px;text-transform:uppercase;letter-spacing:.06em">Year-end top 10</h3>
+    <table class="season-table"><tbody>${top}</tbody></table>
+    <div class="row-end"><button class="btn btn-primary btn-lg" id="btn-offseason">Pre-season training</button></div>`;
+  $('#btn-offseason').addEventListener('click', renderOffseason);
+}
+
+/* ---------- off-season --------------------------------------------------- */
+function renderOffseason() {
+  const u = career.user;
+  const budget = career.trainingPoints();
+  const spend = {}; ATTR_KEYS.forEach(k => spend[k] = 0);
+  const draw = () => {
+    const used = ATTR_KEYS.reduce((t, k) => t + spend[k], 0);
+    $('#offseason-body').innerHTML = `
+      <h2 class="screen-title">Pre-season</h2>
+      <p style="color:var(--muted);margin-bottom:6px">Winter block. You have <strong style="color:var(--acc)">${budget - used}</strong> of ${budget} training points left.
+      Age also moves your numbers on its own — ${u.age} going on ${u.age + 1}.</p>
+      <div style="margin-top:18px">${ATTRS.map(a => {
+        const v = u.attrs[a.key], nv = v + spend[a.key];
+        return `<div class="train-row">
+          <span class="bl" style="font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">${a.label}</span>
+          <span class="bar-track"><span class="bar-fill" style="width:${(nv - 35) / 0.64}%"></span></span>
+          <span class="bv ${vClass(nv)}" style="font-family:var(--font-cond);font-size:20px;font-weight:700;text-align:right">${nv}</span>
+          <span class="train-btns">
+            <button class="tbtn" data-dec="${a.key}" ${spend[a.key] <= 0 ? 'disabled' : ''}>−</button>
+            <button class="tbtn" data-inc="${a.key}" ${used >= budget || nv >= 99 ? 'disabled' : ''}>+</button>
+          </span>
+        </div>`;
+      }).join('')}</div>
+      <div class="row-end"><button class="btn btn-primary btn-lg" id="btn-next-season">Start ${career.year + 1}</button></div>`;
+    $$('[data-inc]').forEach(b => b.addEventListener('click', () => { spend[b.dataset.inc]++; draw(); }));
+    $$('[data-dec]').forEach(b => b.addEventListener('click', () => { spend[b.dataset.dec]--; draw(); }));
+    $('#btn-next-season').addEventListener('click', () => {
+      career.newSeason(spend);
+      career.say(`${career.year} season begins.`, 'info');
+      career.save();
+      renderHub(); show('screen-hub');
+    });
+  };
+  draw();
+  show('screen-offseason');
+}
+</script>
+</body>
+</html>

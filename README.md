@@ -42,6 +42,14 @@ from a checkout:
 npx vercel --prod
 ```
 
+`standalone.html` is the whole game inlined into one file — open it directly
+from disk with no server, or host it anywhere that serves a single HTML file.
+Regenerate it after changing any source file:
+
+```bash
+node tools/build-standalone.js
+```
+
 ## How the simulation works
 
 The match engine is a **point-level Markov chain** — the standard approach in open-source
