@@ -14,6 +14,7 @@ let busy = false;
 // where a completed build should land: 'career' (default) or a doubles seat
 let builderTarget = 'career';
 let doublesSlots = [null, null, null, null];
+let singlesSlots = [null, null];
 
 /* ---------- chrome ------------------------------------------------------- */
 function show(id) {
@@ -240,9 +241,16 @@ $('#attr-choices').addEventListener('click', e => {
     if (builderTarget !== 'career') {
       const target = builderTarget;
       builderTarget = 'career';
-      doublesSlots[target.slot] = makePlayer(target.name, 'AUS', builder.attrs(), { age: 19 + rndInt(8) });
-      renderDoublesSetup();
-      show('screen-doubles-setup');
+      const built = makePlayer(target.name, 'AUS', builder.attrs(), { age: 19 + rndInt(8) });
+      if (target.mode === 'singles') {
+        singlesSlots[target.slot] = built;
+        renderSinglesSetup();
+        show('screen-singles-setup');
+      } else {
+        doublesSlots[target.slot] = built;
+        renderDoublesSetup();
+        show('screen-doubles-setup');
+      }
       return;
     }
     revealPlayer();
@@ -948,15 +956,27 @@ const DOUBLES_SEAT_LABEL = ['Team A · P1', 'Team A · P2', 'Team B · P1', 'Tea
 
 $('#btn-doubles').addEventListener('click', () => { renderDoublesSetup(); show('screen-doubles-setup'); });
 
-function renderDoublesSetup() {
-  for (let i = 0; i < 4; i++) {
-    const el = $('#dslot-' + i);
-    const p = doublesSlots[i];
+function randomProPlayer() {
+  const row = pick(TOUR_RAW);
+  return makePlayer(row[0], row[1], {
+    serve: row[4], forehand: row[5], backhand: row[6], ret: row[7],
+    movement: row[8], net: row[9], stamina: row[10], mental: row[11]
+  }, { hand: row[2], bh: row[3], age: 20 + rndInt(12) });
+}
+
+/* Shared seat grid for both exhibition modes. Queries are scoped to the
+   owning screen — singles and doubles use the same data-attributes, so an
+   unscoped $$ would wire both screens' buttons to whichever rendered last. */
+function renderSeatGrid(cfg) {
+  const screen = $(cfg.screenSel);
+  cfg.slots.forEach((p, i) => {
+    const el = $('#' + cfg.slotPrefix + '-' + i);
+    if (!el) return;
     if (!p) {
       el.className = 'doubles-slot';
       el.innerHTML = `
         <div class="dslot-empty">
-          <input type="text" class="dslot-name-input" id="dname-${i}" placeholder="${DOUBLES_SEAT_LABEL[i]}" maxlength="18">
+          <input type="text" class="dslot-name-input" id="${cfg.namePrefix}-${i}" placeholder="${esc(cfg.labels[i])}" maxlength="18">
           <div class="dslot-btns">
             <button class="btn btn-primary" data-build="${i}">Build</button>
             <button class="btn btn-ghost" data-random="${i}">Random pro</button>
@@ -974,28 +994,29 @@ function renderDoublesSetup() {
           <button class="dslot-clear" data-clear="${i}" title="Clear this seat">&times;</button>
         </div>`;
     }
-  }
-  $$('[data-build]').forEach(b => b.addEventListener('click', () => {
+  });
+  $$('[data-build]', screen).forEach(b => b.addEventListener('click', () => {
     const i = parseInt(b.dataset.build, 10);
-    const input = $('#dname-' + i);
-    const name = (input.value || '').trim() || DOUBLES_SEAT_LABEL[i];
-    builderTarget = { slot: i, name };
+    const input = $('#' + cfg.namePrefix + '-' + i);
+    builderTarget = { slot: i, mode: cfg.mode, name: (input.value || '').trim() || cfg.labels[i] };
     resetBuilder();
     show('screen-builder');
   }));
-  $$('[data-random]').forEach(b => b.addEventListener('click', () => {
-    const i = parseInt(b.dataset.random, 10);
-    const row = pick(TOUR_RAW);
-    doublesSlots[i] = makePlayer(row[0], row[1], {
-      serve: row[4], forehand: row[5], backhand: row[6], ret: row[7],
-      movement: row[8], net: row[9], stamina: row[10], mental: row[11]
-    }, { hand: row[2], bh: row[3], age: 20 + rndInt(12) });
-    renderDoublesSetup();
+  $$('[data-random]', screen).forEach(b => b.addEventListener('click', () => {
+    cfg.slots[parseInt(b.dataset.random, 10)] = randomProPlayer();
+    cfg.rerender();
   }));
-  $$('[data-clear]').forEach(b => b.addEventListener('click', () => {
-    doublesSlots[parseInt(b.dataset.clear, 10)] = null;
-    renderDoublesSetup();
+  $$('[data-clear]', screen).forEach(b => b.addEventListener('click', () => {
+    cfg.slots[parseInt(b.dataset.clear, 10)] = null;
+    cfg.rerender();
   }));
+}
+
+function renderDoublesSetup() {
+  renderSeatGrid({
+    screenSel: '#screen-doubles-setup', slotPrefix: 'dslot', namePrefix: 'dname',
+    slots: doublesSlots, labels: DOUBLES_SEAT_LABEL, mode: 'doubles', rerender: renderDoublesSetup
+  });
   $('#btn-play-doubles').disabled = !doublesSlots.every(Boolean);
 }
 
@@ -1053,4 +1074,240 @@ async function playDoublesMatch(surface) {
     renderDoublesSetup();
     show('screen-doubles-setup');
   });
+}
+
+/* ---------- quick singles --------------------------------------------------
+   A one-off 1v1 with no career attached. Either sim it outright, or play it
+   yourself as Player 1 using the same InteractiveMatch tactic loop the career
+   mode uses. */
+const SINGLES_SEAT_LABEL = ['Player 1', 'Player 2'];
+
+$('#btn-singles').addEventListener('click', () => { renderSinglesSetup(); show('screen-singles-setup'); });
+
+function renderSinglesSetup() {
+  renderSeatGrid({
+    screenSel: '#screen-singles-setup', slotPrefix: 'sslot', namePrefix: 'sname',
+    slots: singlesSlots, labels: SINGLES_SEAT_LABEL, mode: 'singles', rerender: renderSinglesSetup
+  });
+  const ready = singlesSlots.every(Boolean);
+  $('#btn-play-singles').disabled = !ready;
+  $('#btn-singles-play-self').disabled = !ready;
+}
+
+function singlesConfig() {
+  return {
+    surface: $('.seg-btn.active', $('#seg-ssurface')).dataset.v,
+    bestOf: parseInt($('.seg-btn.active', $('#seg-sformat')).dataset.v, 10)
+  };
+}
+
+$('#btn-play-singles').addEventListener('click', () => runSinglesSim(singlesConfig()));
+$('#btn-singles-play-self').addEventListener('click', () => runSinglesInteractive(singlesConfig()));
+
+function singlesHeaderHTML(p1, p2, cfg) {
+  return `
+    <div class="matchup">
+      <div class="mp you"><div class="mp-name">${esc(p1.name)}</div><div class="mp-sub">${p1.country} · OVR ${overall(p1)}</div></div>
+      <div class="vs">VS</div>
+      <div class="mp"><div class="mp-name">${esc(p2.name)}</div><div class="mp-sub">${p2.country} · OVR ${overall(p2)}</div></div>
+    </div>
+    <div class="round-label">${SURFACES[cfg.surface].label} · best of ${cfg.bestOf}</div>`;
+}
+
+function singlesStatsHTML(res, p1, p2) {
+  const a = res.stats.A, b = res.stats.B;
+  const pct = (x, y) => y ? Math.round(100 * x / y) + '%' : '—';
+  const won = res.winnerId === p1.id;
+  return `
+    <div class="match-result ${won ? 'win' : 'loss'}">${esc(res.winner.name)} wins · ${res.minutes} minutes</div>
+    <table class="stat-table">
+      <tr><td>${a.aces}</td><td>Aces</td><td>${b.aces}</td></tr>
+      <tr><td>${a.df}</td><td>Double faults</td><td>${b.df}</td></tr>
+      <tr><td>${pct(a.svPtsWon, a.svPts)}</td><td>Serve points won</td><td>${pct(b.svPtsWon, b.svPts)}</td></tr>
+      <tr><td>${a.winners}</td><td>Winners</td><td>${b.winners}</td></tr>
+      <tr><td>${a.ptsWon}</td><td>Total points</td><td>${b.ptsWon}</td></tr>
+    </table>`;
+}
+
+function singlesEndActions(replay) {
+  $('#singles-match-actions').innerHTML = `
+    <button class="btn btn-ghost" id="btn-singles-rematch">Rematch</button>
+    <button class="btn btn-primary" id="btn-singles-new">New singles</button>`;
+  $('#btn-singles-rematch').addEventListener('click', replay);
+  $('#btn-singles-new').addEventListener('click', () => {
+    singlesSlots = [null, null];
+    renderSinglesSetup();
+    show('screen-singles-setup');
+  });
+}
+
+async function runSinglesSim(cfg) {
+  if (busy) return;
+  busy = true;
+  const [p1, p2] = singlesSlots;
+  show('screen-singles-match');
+  $('#singles-match-actions').innerHTML = '';
+  $('#singles-match-view').innerHTML = singlesHeaderHTML(p1, p2, cfg) +
+    `<div class="score-strip" id="ssim-strip"></div><div id="ssim-outcome"></div>`;
+  const res = simMatch(p1, p2, { surface: cfg.surface, bestOf: cfg.bestOf });
+  const strip = $('#ssim-strip');
+  for (let i = 0; i < res.sets.length; i++) {
+    await sleep(600);
+    const s = res.sets[i];
+    const tb = s.tb ? `<sup>${Math.min(s.tb.a, s.tb.b)}</sup>` : '';
+    const box = document.createElement('div');
+    box.className = 'set-box ' + (s.a > s.b ? 'won' : '');
+    box.innerHTML = `<div class="sg">${s.a}–${s.b}${tb}</div><div class="sl">Set ${i + 1}</div>`;
+    strip.appendChild(box);
+  }
+  await sleep(380);
+  $('#ssim-outcome').innerHTML = singlesStatsHTML(res, p1, p2);
+  singlesEndActions(() => runSinglesSim(cfg));
+  busy = false;
+}
+
+async function runSinglesInteractive(cfg) {
+  if (busy) return;
+  busy = true;
+  const [p1, p2] = singlesSlots;
+  show('screen-singles-match');
+  $('#singles-match-actions').innerHTML = '';
+  const im = new InteractiveMatch(p1, p2, { surface: cfg.surface, bestOf: cfg.bestOf });
+  await runTacticLoop(im, p1, p2, cfg, '#singles-match-view');
+  const res = im.result();
+  $('#singles-match-view').innerHTML = singlesHeaderHTML(p1, p2, cfg) +
+    `<div class="score-strip">${res.sets.map((s, i) => {
+      const tb = s.tb ? `<sup>${Math.min(s.tb.a, s.tb.b)}</sup>` : '';
+      return `<div class="set-box ${s.a > s.b ? 'won' : ''}"><div class="sg">${s.a}–${s.b}${tb}</div><div class="sl">Set ${i + 1}</div></div>`;
+    }).join('')}</div>` + singlesStatsHTML(res, p1, p2);
+  singlesEndActions(() => runSinglesInteractive(cfg));
+  busy = false;
+}
+
+/* The same per-game tactic loop the career mode uses, pointed at any container.
+   Player 1 is always side 'A' in an InteractiveMatch built here. */
+function runTacticLoop(im, me, opp, cfg, containerSel) {
+  return new Promise(resolve => {
+    function render() {
+      const meServing = im.server === 'A';
+      const tactics = meServing ? TACTIC.serve : TACTIC.ret;
+      const keys = meServing ? ['power', 'standard', 'safe'] : ['aggressive', 'standard', 'safe'];
+      const setBoxes = im.sets.map((s, i) => {
+        const tb = s.tb ? `<sup>${Math.min(s.tb.a, s.tb.b)}</sup>` : '';
+        return `<div class="set-box ${s.a > s.b ? 'won' : ''}"><div class="sg">${s.a}–${s.b}${tb}</div><div class="sl">Set ${i + 1}</div></div>`;
+      }).join('');
+      $(containerSel).innerHTML = singlesHeaderHTML(me, opp, cfg) +
+        `<div class="score-strip">${setBoxes}<div class="set-box live"><div class="sg">${im.ga}–${im.gb}</div><div class="sl">${im.isTiebreakNext ? 'Tiebreak' : 'Current game'}</div></div></div>
+        <div class="tactic-panel">
+          <p class="tactic-lead">${meServing ? 'You’re serving' : 'You’re returning'} — pick your approach for this game</p>
+          <div class="tactic-choices">
+            ${keys.map(k => `<button class="tactic-btn" data-tactic="${k}">
+                <span class="tb-label">${esc(tactics[k].label)}</span>
+                <span class="tb-hint">${esc(tactics[k].hint)}</span>
+              </button>`).join('')}
+          </div>
+          <button class="btn btn-ghost" id="btn-tactic-simrest">Sim the rest of this match</button>
+        </div>`;
+      $$('.tactic-btn', $(containerSel)).forEach(b => b.addEventListener('click', () => {
+        const t = b.dataset.tactic;
+        if (im.isTiebreakNext) im.playTiebreak('A', t); else im.playGame('A', t);
+        if (im.over) { resolve(); return; }
+        render();
+      }));
+      $('#btn-tactic-simrest').addEventListener('click', () => {
+        let guard = 0;
+        while (!im.over && guard++ < 500) {
+          if (im.isTiebreakNext) im.playTiebreak('A', 'standard'); else im.playGame('A', 'standard');
+        }
+        resolve();
+      });
+    }
+    render();
+  });
+}
+
+/* ---------- tennis trivia --------------------------------------------------
+   Ten questions a round, drawn at random from the bank. Options are shuffled
+   at render time: the stored answer positions are lopsided (nothing is ever
+   the last option), and shuffling makes that irrelevant instead of having to
+   hand-balance the data every time a question is added. */
+const TRIVIA_ROUND_LEN = 10;
+let triviaState = null;
+
+$('#btn-trivia').addEventListener('click', startTrivia);
+
+function startTrivia() {
+  const picked = shuffle(TRIVIA.slice()).slice(0, Math.min(TRIVIA_ROUND_LEN, TRIVIA.length));
+  triviaState = {
+    questions: picked.map(q => {
+      const opts = q[1].map((text, i) => ({ text, correct: i === q[2] }));
+      return { q: q[0], opts: shuffle(opts), explain: q[3] };
+    }),
+    i: 0, score: 0, answered: false
+  };
+  renderTrivia();
+  show('screen-trivia');
+}
+
+function renderTrivia() {
+  const s = triviaState;
+  if (s.i >= s.questions.length) return renderTriviaResult();
+  const cur = s.questions[s.i];
+  $('#trivia-body').innerHTML = `
+    <div class="trivia-head">
+      <h2 class="screen-title" style="margin:0">Tennis trivia</h2>
+      <span class="panel-sub">Question ${s.i + 1} of ${s.questions.length} · ${s.score} correct</span>
+    </div>
+    <div class="trivia-progress"><span style="width:${(s.i / s.questions.length) * 100}%"></span></div>
+    <p class="trivia-q">${esc(cur.q)}</p>
+    <div class="trivia-opts">
+      ${cur.opts.map((o, i) => `<button class="trivia-opt" data-opt="${i}">${esc(o.text)}</button>`).join('')}
+    </div>
+    <div id="trivia-feedback"></div>`;
+  $$('.trivia-opt').forEach(b => b.addEventListener('click', () => answerTrivia(parseInt(b.dataset.opt, 10))));
+}
+
+function answerTrivia(idx) {
+  const s = triviaState;
+  if (s.answered) return;
+  s.answered = true;
+  const cur = s.questions[s.i];
+  const right = cur.opts[idx].correct;
+  if (right) s.score++;
+  $$('.trivia-opt').forEach((b, i) => {
+    b.disabled = true;
+    if (cur.opts[i].correct) b.classList.add('correct');
+    else if (i === idx) b.classList.add('wrong');
+  });
+  $('#trivia-feedback').innerHTML = `
+    <div class="trivia-feedback ${right ? 'good' : 'bad'}">
+      <strong>${right ? 'Correct' : 'Not quite'}</strong>
+      <p>${esc(cur.explain)}</p>
+    </div>
+    <div class="row-end"><button class="btn btn-primary" id="btn-trivia-next">${s.i + 1 >= s.questions.length ? 'See your score' : 'Next question'}</button></div>`;
+  $('#btn-trivia-next').addEventListener('click', () => {
+    s.i++; s.answered = false;
+    renderTrivia();
+  });
+}
+
+function renderTriviaResult() {
+  const s = triviaState;
+  const pct = Math.round(100 * s.score / s.questions.length);
+  const verdict = pct === 100 ? 'Perfect round. Nothing left to teach you.'
+    : pct >= 80 ? 'Strong. You clearly watch a lot of tennis.'
+    : pct >= 50 ? 'Respectable — a few gaps to close.'
+    : 'Room to grow. Worth another round.';
+  $('#trivia-body').innerHTML = `
+    <div class="retire-hero">
+      <div class="retire-name">Tennis trivia</div>
+      <div class="retire-tier">${s.score} / ${s.questions.length}</div>
+      <p class="retire-blurb">${esc(verdict)}</p>
+    </div>
+    <div class="retire-actions">
+      <button class="btn btn-primary btn-lg" id="btn-trivia-again">Play again</button>
+      <button class="btn btn-ghost" data-goto="screen-home">Back to menu</button>
+    </div>`;
+  $('#btn-trivia-again').addEventListener('click', startTrivia);
+  $$('#trivia-body [data-goto]').forEach(b => b.addEventListener('click', () => show(b.dataset.goto)));
 }

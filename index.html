@@ -5,19 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BASELINE — Build a Tennis Player, Play a Full Season</title>
 <meta name="description" content="Free browser tennis game. Spin the wheel and steal one skill from each legend, then play a full season of Grand Slams and Masters 1000s — plus 2v2 doubles, tennis trivia and quick singles matches.">
-<link rel="canonical" href="https://anujasiriwardena4-spec.github.io/James-W---Tennis-games/">
+<link rel="canonical" href="https://baseline-tennis-tau.vercel.app/">
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#070b0e">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BASELINE">
 <meta property="og:title" content="BASELINE — Build a Tennis Player, Play a Full Season">
 <meta property="og:description" content="Spin the wheel, steal one skill from each legend, then find out how far that player gets on tour. Free browser tennis game.">
-<meta property="og:url" content="https://anujasiriwardena4-spec.github.io/James-W---Tennis-games/">
+<meta property="og:url" content="https://baseline-tennis-tau.vercel.app/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="BASELINE — Build a Tennis Player">
 <meta name="twitter:description" content="Spin the wheel, steal one skill from each legend, then play a full tennis season.">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"BASELINE","url":"https://anujasiriwardena4-spec.github.io/James-W---Tennis-games/","description":"Build a tennis player by spinning for eight skills off eight different players, then play a full season of Grand Slams and Masters 1000s.","genre":["Sports","Simulation","Management"],"applicationCategory":"Game","operatingSystem":"Web browser","playMode":"SinglePlayer","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"BASELINE","url":"https://baseline-tennis-tau.vercel.app/","description":"Build a tennis player by spinning for eight skills off eight different players, then play a full season of Grand Slams and Masters 1000s.","genre":["Sports","Simulation","Management"],"applicationCategory":"Game","operatingSystem":"Web browser","playMode":"SinglePlayer","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,7 +45,9 @@
       <div class="home-actions">
         <button class="btn btn-primary btn-lg" id="btn-new">Build a player</button>
         <button class="btn btn-ghost btn-lg" id="btn-careers">Your careers</button>
+        <button class="btn btn-ghost btn-lg" id="btn-singles">Quick singles</button>
         <button class="btn btn-ghost btn-lg" id="btn-doubles">Local 2v2</button>
+        <button class="btn btn-ghost btn-lg" id="btn-trivia">Tennis trivia</button>
       </div>
 
       <div class="home-rules">
@@ -298,6 +300,64 @@
       <h2 class="screen-title">2v2 exhibition</h2>
       <div id="doubles-match-view"></div>
       <div class="row-end" id="doubles-match-actions"></div>
+    </div>
+  </section>
+
+  <!-- ================= QUICK SINGLES SETUP ================= -->
+  <section class="screen" id="screen-singles-setup">
+    <div class="panel">
+      <h2 class="screen-title">Quick singles</h2>
+      <p class="saves-intro">One-off 1v1, no career attached. Build both players, or drop in tour pros —
+        then sim it or play it out point by point.</p>
+      <div class="doubles-teams">
+        <div class="doubles-team">
+          <h3 class="doubles-team-name team-a">Player 1</h3>
+          <div class="doubles-slot" id="sslot-0" data-slot="0"></div>
+        </div>
+        <div class="doubles-vs">VS</div>
+        <div class="doubles-team">
+          <h3 class="doubles-team-name team-b">Player 2</h3>
+          <div class="doubles-slot" id="sslot-1" data-slot="1"></div>
+        </div>
+      </div>
+      <div class="doubles-options">
+        <div class="field">
+          <span>Surface</span>
+          <div class="seg" id="seg-ssurface">
+            <button class="seg-btn active" data-v="hard">Hard</button>
+            <button class="seg-btn" data-v="clay">Clay</button>
+            <button class="seg-btn" data-v="grass">Grass</button>
+          </div>
+        </div>
+        <div class="field">
+          <span>Format</span>
+          <div class="seg" id="seg-sformat">
+            <button class="seg-btn active" data-v="3">Best of 3</button>
+            <button class="seg-btn" data-v="5">Best of 5</button>
+          </div>
+        </div>
+      </div>
+      <div class="row-end">
+        <button class="btn btn-ghost" data-goto="screen-home">Back</button>
+        <button class="btn btn-ghost btn-lg" id="btn-singles-play-self" disabled>Play as Player 1</button>
+        <button class="btn btn-primary btn-lg" id="btn-play-singles" disabled>Sim the match</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= QUICK SINGLES MATCH ================= -->
+  <section class="screen" id="screen-singles-match">
+    <div class="panel">
+      <h2 class="screen-title">Singles exhibition</h2>
+      <div id="singles-match-view"></div>
+      <div class="row-end" id="singles-match-actions"></div>
+    </div>
+  </section>
+
+  <!-- ================= TRIVIA ================= -->
+  <section class="screen" id="screen-trivia">
+    <div class="panel narrow">
+      <div id="trivia-body"></div>
     </div>
   </section>
 

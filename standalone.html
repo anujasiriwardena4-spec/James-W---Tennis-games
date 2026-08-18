@@ -5,19 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BASELINE — Build a Tennis Player, Play a Full Season</title>
 <meta name="description" content="Free browser tennis game. Spin the wheel and steal one skill from each legend, then play a full season of Grand Slams and Masters 1000s — plus 2v2 doubles, tennis trivia and quick singles matches.">
-<link rel="canonical" href="https://anujasiriwardena4-spec.github.io/James-W---Tennis-games/">
+<link rel="canonical" href="https://baseline-tennis-tau.vercel.app/">
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#070b0e">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BASELINE">
 <meta property="og:title" content="BASELINE — Build a Tennis Player, Play a Full Season">
 <meta property="og:description" content="Spin the wheel, steal one skill from each legend, then find out how far that player gets on tour. Free browser tennis game.">
-<meta property="og:url" content="https://anujasiriwardena4-spec.github.io/James-W---Tennis-games/">
+<meta property="og:url" content="https://baseline-tennis-tau.vercel.app/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="BASELINE — Build a Tennis Player">
 <meta name="twitter:description" content="Spin the wheel, steal one skill from each legend, then play a full tennis season.">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"BASELINE","url":"https://anujasiriwardena4-spec.github.io/James-W---Tennis-games/","description":"Build a tennis player by spinning for eight skills off eight different players, then play a full season of Grand Slams and Masters 1000s.","genre":["Sports","Simulation","Management"],"applicationCategory":"Game","operatingSystem":"Web browser","playMode":"SinglePlayer","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"BASELINE","url":"https://baseline-tennis-tau.vercel.app/","description":"Build a tennis player by spinning for eight skills off eight different players, then play a full season of Grand Slams and Masters 1000s.","genre":["Sports","Simulation","Management"],"applicationCategory":"Game","operatingSystem":"Web browser","playMode":"SinglePlayer","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -423,6 +423,28 @@ button,input,select{font:inherit;color:inherit}
 .dteam-box .dt-sub{color:var(--dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
 .dteam-box.dwin .dt-names{color:var(--acc)}
 
+/* ---------- trivia ---------- */
+.trivia-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.trivia-progress{height:4px;background:var(--bg-2);border-radius:999px;overflow:hidden;margin-bottom:22px}
+.trivia-progress span{display:block;height:100%;background:var(--acc);border-radius:999px;transition:width .3s ease}
+.trivia-q{font-family:var(--font-cond);font-size:clamp(21px,3.4vw,28px);line-height:1.25;margin-bottom:20px;text-wrap:balance}
+.trivia-opts{display:grid;gap:10px}
+.trivia-opt{
+  background:var(--bg-2);border:1px solid var(--line);border-radius:12px;
+  padding:14px 16px;text-align:left;cursor:pointer;color:var(--txt);font-size:15px;transition:.15s;
+}
+.trivia-opt:hover:not(:disabled){border-color:var(--acc);background:#1b2a36}
+.trivia-opt:disabled{cursor:default}
+.trivia-opt.correct{border-color:var(--acc);background:rgba(212,255,63,.12);color:var(--acc);font-weight:600}
+.trivia-opt.wrong{border-color:var(--bad);background:rgba(248,113,113,.1);color:var(--bad)}
+.trivia-feedback{margin-top:18px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg-2)}
+.trivia-feedback.good{border-color:rgba(212,255,63,.35)}
+.trivia-feedback.bad{border-color:rgba(248,113,113,.35)}
+.trivia-feedback strong{font-family:var(--font-cond);font-size:18px;text-transform:uppercase;letter-spacing:.04em}
+.trivia-feedback.good strong{color:var(--acc)}
+.trivia-feedback.bad strong{color:var(--bad)}
+.trivia-feedback p{color:var(--muted);font-size:14px;line-height:1.55;margin-top:5px}
+
 /* ---------- lifestyle shop ---------- */
 .shop-section{margin-top:26px}
 .shop-section-title{font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
@@ -513,7 +535,9 @@ button,input,select{font:inherit;color:inherit}
       <div class="home-actions">
         <button class="btn btn-primary btn-lg" id="btn-new">Build a player</button>
         <button class="btn btn-ghost btn-lg" id="btn-careers">Your careers</button>
+        <button class="btn btn-ghost btn-lg" id="btn-singles">Quick singles</button>
         <button class="btn btn-ghost btn-lg" id="btn-doubles">Local 2v2</button>
+        <button class="btn btn-ghost btn-lg" id="btn-trivia">Tennis trivia</button>
       </div>
 
       <div class="home-rules">
@@ -757,6 +781,64 @@ button,input,select{font:inherit;color:inherit}
     </div>
   </section>
 
+  <!-- ================= QUICK SINGLES SETUP ================= -->
+  <section class="screen" id="screen-singles-setup">
+    <div class="panel">
+      <h2 class="screen-title">Quick singles</h2>
+      <p class="saves-intro">One-off 1v1, no career attached. Build both players, or drop in tour pros —
+        then sim it or play it out point by point.</p>
+      <div class="doubles-teams">
+        <div class="doubles-team">
+          <h3 class="doubles-team-name team-a">Player 1</h3>
+          <div class="doubles-slot" id="sslot-0" data-slot="0"></div>
+        </div>
+        <div class="doubles-vs">VS</div>
+        <div class="doubles-team">
+          <h3 class="doubles-team-name team-b">Player 2</h3>
+          <div class="doubles-slot" id="sslot-1" data-slot="1"></div>
+        </div>
+      </div>
+      <div class="doubles-options">
+        <div class="field">
+          <span>Surface</span>
+          <div class="seg" id="seg-ssurface">
+            <button class="seg-btn active" data-v="hard">Hard</button>
+            <button class="seg-btn" data-v="clay">Clay</button>
+            <button class="seg-btn" data-v="grass">Grass</button>
+          </div>
+        </div>
+        <div class="field">
+          <span>Format</span>
+          <div class="seg" id="seg-sformat">
+            <button class="seg-btn active" data-v="3">Best of 3</button>
+            <button class="seg-btn" data-v="5">Best of 5</button>
+          </div>
+        </div>
+      </div>
+      <div class="row-end">
+        <button class="btn btn-ghost" data-goto="screen-home">Back</button>
+        <button class="btn btn-ghost btn-lg" id="btn-singles-play-self" disabled>Play as Player 1</button>
+        <button class="btn btn-primary btn-lg" id="btn-play-singles" disabled>Sim the match</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= QUICK SINGLES MATCH ================= -->
+  <section class="screen" id="screen-singles-match">
+    <div class="panel">
+      <h2 class="screen-title">Singles exhibition</h2>
+      <div id="singles-match-view"></div>
+      <div class="row-end" id="singles-match-actions"></div>
+    </div>
+  </section>
+
+  <!-- ================= TRIVIA ================= -->
+  <section class="screen" id="screen-trivia">
+    <div class="panel narrow">
+      <div id="trivia-body"></div>
+    </div>
+  </section>
+
 </div>
 
 <div class="toast-wrap" id="toast-wrap"></div>
@@ -962,6 +1044,74 @@ const LIFESTYLE_CATALOG = {
   ]
 };
 const LIFESTYLE_RESALE_PCT = 0.5;
+
+/* --- Trivia ----------------------------------------------------------------
+   [question, [options], correctIndex, explanation]. Deliberately kept to
+   long-settled facts — records that stand for decades, rules, and history —
+   rather than "current world No. 1" style questions that rot immediately.
+   ---------------------------------------------------------------------------*/
+const TRIVIA = [
+  ['What is the score called when a game reaches 40–40?', ['Deuce', 'Advantage', 'Break point', 'Set point'], 0,
+   'From deuce a player must win two straight points — advantage, then the game.'],
+  ['Which Grand Slam is played on clay?', ['Wimbledon', 'US Open', 'Roland-Garros', 'Australian Open'], 2,
+   'Roland-Garros in Paris is the only Grand Slam played on clay.'],
+  ['Which Grand Slam is played on grass?', ['Wimbledon', 'US Open', 'Roland-Garros', 'Australian Open'], 0,
+   'Wimbledon is the only remaining Grand Slam on grass, and the oldest tournament in tennis.'],
+  ['What does a score of "love" mean?', ['One point', 'Zero points', 'A tie', 'Match point'], 1,
+   'Love means zero. 15–love means the server leads by a point to nothing.'],
+  ['How many Grand Slam tournaments are there each year?', ['Three', 'Four', 'Six', 'Nine'], 1,
+   'Australian Open, Roland-Garros, Wimbledon and the US Open.'],
+  ['What is it called when the server wins the point untouched by the returner?', ['A winner', 'A let', 'An ace', 'A smash'], 2,
+   'An ace — a legal serve the returner never makes contact with.'],
+  ['In a standard set, how many games do you normally need to win it?', ['Four', 'Five', 'Six', 'Seven'], 2,
+   'Six, and you must lead by two — otherwise it goes on, usually to a tiebreak at 6–6.'],
+  ['What happens if a serve clips the net but still lands in the correct box?', ['Point to the returner', 'A let, the serve is replayed', 'A fault', 'Play continues'], 1,
+   'It is a let: that serve is simply replayed, with no penalty.'],
+  ['How many players are on court in a doubles match?', ['Two', 'Three', 'Four', 'Six'], 2,
+   'Four — two per team.'],
+  ['What is a "break of serve"?', ['Winning a game on your own serve', 'Winning a game on your opponent’s serve', 'Breaking a racquet', 'A rest period'], 1,
+   'Taking a game while your opponent is serving. Holding serve is expected; breaking is how sets are won.'],
+  ['Which surface generally produces the fastest, lowest bounce?', ['Clay', 'Grass', 'Hard court', 'Carpet'], 1,
+   'Grass — the ball skids through low and fast, which rewards big servers.'],
+  ['Which surface generally produces the slowest, highest bounce?', ['Clay', 'Grass', 'Hard court', 'Indoor hard'], 0,
+   'Clay slows the ball and kicks it up, which rewards defence and stamina.'],
+  ['How many points must you normally win a standard tiebreak by?', ['One', 'Two', 'Three', 'Four'], 1,
+   'First to seven, but you must lead by two — so tiebreaks can run well past 7.'],
+  ['What is the term for winning all four Grand Slams in one calendar year?', ['A Career Slam', 'A Golden Slam', 'A Calendar Grand Slam', 'A Triple Crown'], 2,
+   'A Calendar Grand Slam. Winning all four across a whole career instead is a Career Slam.'],
+  ['A "Golden Slam" adds which title to all four Grand Slams?', ['The Tour Finals', 'An Olympic gold medal', 'The Davis Cup', 'A Masters 1000'], 1,
+   'Olympic singles gold in the same year, on top of all four majors.'],
+  ['How many Masters 1000 tournaments are on the ATP calendar?', ['Six', 'Nine', 'Twelve', 'Four'], 1,
+   'Nine Masters 1000 events sit just below the Grand Slams in prestige.'],
+  ['What does "hold serve" mean?', ['Winning your service game', 'Delaying the serve', 'Serving twice', 'Returning a serve'], 0,
+   'Winning the game in which you were serving — the baseline expectation at tour level.'],
+  ['In tennis scoring, what comes after 30?', ['35', '40', '45', 'Game'], 1,
+   'The sequence is 15, 30, 40, then game.'],
+  ['What is a "double fault"?', ['Two aces in a row', 'Missing both serve attempts', 'Hitting the net twice', 'Two winners'], 1,
+   'Missing both first and second serve, which hands the point straight to the returner.'],
+  ['Best-of-five-set matches are played in men’s singles at which events?', ['All tour events', 'Masters 1000 only', 'Grand Slams only', 'The Tour Finals only'], 2,
+   'Only the four Grand Slams. Everything else on tour is best of three.'],
+  ['What is the "service box"?', ['The area a serve must land in', 'Where players sit', 'The umpire’s chair', 'Behind the baseline'], 0,
+   'The serve must land in the box diagonally opposite the server.'],
+  ['Which shot is hit above head height, usually to finish a point at the net?', ['Slice', 'Drop shot', 'Smash', 'Lob'], 2,
+   'The smash — an overhead put-away, usually off a short lob.'],
+  ['What is a "lob"?', ['A high ball hit over an opponent at the net', 'A very fast serve', 'A shot into the net', 'A backhand slice'], 0,
+   'A high, looping ball played over a net-rushing opponent.'],
+  ['What is a "drop shot"?', ['A powerful baseline drive', 'A softly played ball just over the net', 'A second serve', 'An overhead'], 1,
+   'A delicately played ball that barely clears the net, to drag a deep opponent forward.'],
+  ['How long is a standard singles tennis court?', ['78 feet (23.77 m)', '60 feet (18.3 m)', '94 feet (28.7 m)', '100 feet (30.5 m)'], 0,
+   '78 feet — 23.77 metres — from baseline to baseline.'],
+  ['In doubles, the court is wider by how much on each side?', ['The alleys (tramlines)', 'It is the same width', 'One metre of clay', 'The service box'], 0,
+   'The doubles alleys, also called tramlines, are in play in doubles only.'],
+  ['What is the "deciding set" tiebreak at most Grand Slams played to?', ['7 points', '10 points', '12 points', 'No tiebreak'], 1,
+   'A 10-point tiebreak at 6–6 in the final set, now standardised across the majors.'],
+  ['Which country hosts the Australian Open?', ['Austria', 'Australia', 'New Zealand', 'South Africa'], 1,
+   'Melbourne, Australia — the first Grand Slam of the calendar year.'],
+  ['What is the ATP?', ['A tournament', 'The men’s professional tour body', 'A racquet brand', 'A scoring system'], 1,
+   'The Association of Tennis Professionals, which runs the men’s tour.'],
+  ['What does "unforced error" mean?', ['A point lost to a great shot', 'A mistake not caused by opponent pressure', 'A foot fault', 'A broken string'], 1,
+   'A miss you had full control over — nothing about the opponent’s shot forced it.']
+];
 
 /* ============================================================================
    BASELINE — simulation engine
@@ -2299,6 +2449,7 @@ let busy = false;
 // where a completed build should land: 'career' (default) or a doubles seat
 let builderTarget = 'career';
 let doublesSlots = [null, null, null, null];
+let singlesSlots = [null, null];
 
 /* ---------- chrome ------------------------------------------------------- */
 function show(id) {
@@ -2525,9 +2676,16 @@ $('#attr-choices').addEventListener('click', e => {
     if (builderTarget !== 'career') {
       const target = builderTarget;
       builderTarget = 'career';
-      doublesSlots[target.slot] = makePlayer(target.name, 'AUS', builder.attrs(), { age: 19 + rndInt(8) });
-      renderDoublesSetup();
-      show('screen-doubles-setup');
+      const built = makePlayer(target.name, 'AUS', builder.attrs(), { age: 19 + rndInt(8) });
+      if (target.mode === 'singles') {
+        singlesSlots[target.slot] = built;
+        renderSinglesSetup();
+        show('screen-singles-setup');
+      } else {
+        doublesSlots[target.slot] = built;
+        renderDoublesSetup();
+        show('screen-doubles-setup');
+      }
       return;
     }
     revealPlayer();
@@ -3233,15 +3391,27 @@ const DOUBLES_SEAT_LABEL = ['Team A · P1', 'Team A · P2', 'Team B · P1', 'Tea
 
 $('#btn-doubles').addEventListener('click', () => { renderDoublesSetup(); show('screen-doubles-setup'); });
 
-function renderDoublesSetup() {
-  for (let i = 0; i < 4; i++) {
-    const el = $('#dslot-' + i);
-    const p = doublesSlots[i];
+function randomProPlayer() {
+  const row = pick(TOUR_RAW);
+  return makePlayer(row[0], row[1], {
+    serve: row[4], forehand: row[5], backhand: row[6], ret: row[7],
+    movement: row[8], net: row[9], stamina: row[10], mental: row[11]
+  }, { hand: row[2], bh: row[3], age: 20 + rndInt(12) });
+}
+
+/* Shared seat grid for both exhibition modes. Queries are scoped to the
+   owning screen — singles and doubles use the same data-attributes, so an
+   unscoped $$ would wire both screens' buttons to whichever rendered last. */
+function renderSeatGrid(cfg) {
+  const screen = $(cfg.screenSel);
+  cfg.slots.forEach((p, i) => {
+    const el = $('#' + cfg.slotPrefix + '-' + i);
+    if (!el) return;
     if (!p) {
       el.className = 'doubles-slot';
       el.innerHTML = `
         <div class="dslot-empty">
-          <input type="text" class="dslot-name-input" id="dname-${i}" placeholder="${DOUBLES_SEAT_LABEL[i]}" maxlength="18">
+          <input type="text" class="dslot-name-input" id="${cfg.namePrefix}-${i}" placeholder="${esc(cfg.labels[i])}" maxlength="18">
           <div class="dslot-btns">
             <button class="btn btn-primary" data-build="${i}">Build</button>
             <button class="btn btn-ghost" data-random="${i}">Random pro</button>
@@ -3259,28 +3429,29 @@ function renderDoublesSetup() {
           <button class="dslot-clear" data-clear="${i}" title="Clear this seat">&times;</button>
         </div>`;
     }
-  }
-  $$('[data-build]').forEach(b => b.addEventListener('click', () => {
+  });
+  $$('[data-build]', screen).forEach(b => b.addEventListener('click', () => {
     const i = parseInt(b.dataset.build, 10);
-    const input = $('#dname-' + i);
-    const name = (input.value || '').trim() || DOUBLES_SEAT_LABEL[i];
-    builderTarget = { slot: i, name };
+    const input = $('#' + cfg.namePrefix + '-' + i);
+    builderTarget = { slot: i, mode: cfg.mode, name: (input.value || '').trim() || cfg.labels[i] };
     resetBuilder();
     show('screen-builder');
   }));
-  $$('[data-random]').forEach(b => b.addEventListener('click', () => {
-    const i = parseInt(b.dataset.random, 10);
-    const row = pick(TOUR_RAW);
-    doublesSlots[i] = makePlayer(row[0], row[1], {
-      serve: row[4], forehand: row[5], backhand: row[6], ret: row[7],
-      movement: row[8], net: row[9], stamina: row[10], mental: row[11]
-    }, { hand: row[2], bh: row[3], age: 20 + rndInt(12) });
-    renderDoublesSetup();
+  $$('[data-random]', screen).forEach(b => b.addEventListener('click', () => {
+    cfg.slots[parseInt(b.dataset.random, 10)] = randomProPlayer();
+    cfg.rerender();
   }));
-  $$('[data-clear]').forEach(b => b.addEventListener('click', () => {
-    doublesSlots[parseInt(b.dataset.clear, 10)] = null;
-    renderDoublesSetup();
+  $$('[data-clear]', screen).forEach(b => b.addEventListener('click', () => {
+    cfg.slots[parseInt(b.dataset.clear, 10)] = null;
+    cfg.rerender();
   }));
+}
+
+function renderDoublesSetup() {
+  renderSeatGrid({
+    screenSel: '#screen-doubles-setup', slotPrefix: 'dslot', namePrefix: 'dname',
+    slots: doublesSlots, labels: DOUBLES_SEAT_LABEL, mode: 'doubles', rerender: renderDoublesSetup
+  });
   $('#btn-play-doubles').disabled = !doublesSlots.every(Boolean);
 }
 
@@ -3338,6 +3509,242 @@ async function playDoublesMatch(surface) {
     renderDoublesSetup();
     show('screen-doubles-setup');
   });
+}
+
+/* ---------- quick singles --------------------------------------------------
+   A one-off 1v1 with no career attached. Either sim it outright, or play it
+   yourself as Player 1 using the same InteractiveMatch tactic loop the career
+   mode uses. */
+const SINGLES_SEAT_LABEL = ['Player 1', 'Player 2'];
+
+$('#btn-singles').addEventListener('click', () => { renderSinglesSetup(); show('screen-singles-setup'); });
+
+function renderSinglesSetup() {
+  renderSeatGrid({
+    screenSel: '#screen-singles-setup', slotPrefix: 'sslot', namePrefix: 'sname',
+    slots: singlesSlots, labels: SINGLES_SEAT_LABEL, mode: 'singles', rerender: renderSinglesSetup
+  });
+  const ready = singlesSlots.every(Boolean);
+  $('#btn-play-singles').disabled = !ready;
+  $('#btn-singles-play-self').disabled = !ready;
+}
+
+function singlesConfig() {
+  return {
+    surface: $('.seg-btn.active', $('#seg-ssurface')).dataset.v,
+    bestOf: parseInt($('.seg-btn.active', $('#seg-sformat')).dataset.v, 10)
+  };
+}
+
+$('#btn-play-singles').addEventListener('click', () => runSinglesSim(singlesConfig()));
+$('#btn-singles-play-self').addEventListener('click', () => runSinglesInteractive(singlesConfig()));
+
+function singlesHeaderHTML(p1, p2, cfg) {
+  return `
+    <div class="matchup">
+      <div class="mp you"><div class="mp-name">${esc(p1.name)}</div><div class="mp-sub">${p1.country} · OVR ${overall(p1)}</div></div>
+      <div class="vs">VS</div>
+      <div class="mp"><div class="mp-name">${esc(p2.name)}</div><div class="mp-sub">${p2.country} · OVR ${overall(p2)}</div></div>
+    </div>
+    <div class="round-label">${SURFACES[cfg.surface].label} · best of ${cfg.bestOf}</div>`;
+}
+
+function singlesStatsHTML(res, p1, p2) {
+  const a = res.stats.A, b = res.stats.B;
+  const pct = (x, y) => y ? Math.round(100 * x / y) + '%' : '—';
+  const won = res.winnerId === p1.id;
+  return `
+    <div class="match-result ${won ? 'win' : 'loss'}">${esc(res.winner.name)} wins · ${res.minutes} minutes</div>
+    <table class="stat-table">
+      <tr><td>${a.aces}</td><td>Aces</td><td>${b.aces}</td></tr>
+      <tr><td>${a.df}</td><td>Double faults</td><td>${b.df}</td></tr>
+      <tr><td>${pct(a.svPtsWon, a.svPts)}</td><td>Serve points won</td><td>${pct(b.svPtsWon, b.svPts)}</td></tr>
+      <tr><td>${a.winners}</td><td>Winners</td><td>${b.winners}</td></tr>
+      <tr><td>${a.ptsWon}</td><td>Total points</td><td>${b.ptsWon}</td></tr>
+    </table>`;
+}
+
+function singlesEndActions(replay) {
+  $('#singles-match-actions').innerHTML = `
+    <button class="btn btn-ghost" id="btn-singles-rematch">Rematch</button>
+    <button class="btn btn-primary" id="btn-singles-new">New singles</button>`;
+  $('#btn-singles-rematch').addEventListener('click', replay);
+  $('#btn-singles-new').addEventListener('click', () => {
+    singlesSlots = [null, null];
+    renderSinglesSetup();
+    show('screen-singles-setup');
+  });
+}
+
+async function runSinglesSim(cfg) {
+  if (busy) return;
+  busy = true;
+  const [p1, p2] = singlesSlots;
+  show('screen-singles-match');
+  $('#singles-match-actions').innerHTML = '';
+  $('#singles-match-view').innerHTML = singlesHeaderHTML(p1, p2, cfg) +
+    `<div class="score-strip" id="ssim-strip"></div><div id="ssim-outcome"></div>`;
+  const res = simMatch(p1, p2, { surface: cfg.surface, bestOf: cfg.bestOf });
+  const strip = $('#ssim-strip');
+  for (let i = 0; i < res.sets.length; i++) {
+    await sleep(600);
+    const s = res.sets[i];
+    const tb = s.tb ? `<sup>${Math.min(s.tb.a, s.tb.b)}</sup>` : '';
+    const box = document.createElement('div');
+    box.className = 'set-box ' + (s.a > s.b ? 'won' : '');
+    box.innerHTML = `<div class="sg">${s.a}–${s.b}${tb}</div><div class="sl">Set ${i + 1}</div>`;
+    strip.appendChild(box);
+  }
+  await sleep(380);
+  $('#ssim-outcome').innerHTML = singlesStatsHTML(res, p1, p2);
+  singlesEndActions(() => runSinglesSim(cfg));
+  busy = false;
+}
+
+async function runSinglesInteractive(cfg) {
+  if (busy) return;
+  busy = true;
+  const [p1, p2] = singlesSlots;
+  show('screen-singles-match');
+  $('#singles-match-actions').innerHTML = '';
+  const im = new InteractiveMatch(p1, p2, { surface: cfg.surface, bestOf: cfg.bestOf });
+  await runTacticLoop(im, p1, p2, cfg, '#singles-match-view');
+  const res = im.result();
+  $('#singles-match-view').innerHTML = singlesHeaderHTML(p1, p2, cfg) +
+    `<div class="score-strip">${res.sets.map((s, i) => {
+      const tb = s.tb ? `<sup>${Math.min(s.tb.a, s.tb.b)}</sup>` : '';
+      return `<div class="set-box ${s.a > s.b ? 'won' : ''}"><div class="sg">${s.a}–${s.b}${tb}</div><div class="sl">Set ${i + 1}</div></div>`;
+    }).join('')}</div>` + singlesStatsHTML(res, p1, p2);
+  singlesEndActions(() => runSinglesInteractive(cfg));
+  busy = false;
+}
+
+/* The same per-game tactic loop the career mode uses, pointed at any container.
+   Player 1 is always side 'A' in an InteractiveMatch built here. */
+function runTacticLoop(im, me, opp, cfg, containerSel) {
+  return new Promise(resolve => {
+    function render() {
+      const meServing = im.server === 'A';
+      const tactics = meServing ? TACTIC.serve : TACTIC.ret;
+      const keys = meServing ? ['power', 'standard', 'safe'] : ['aggressive', 'standard', 'safe'];
+      const setBoxes = im.sets.map((s, i) => {
+        const tb = s.tb ? `<sup>${Math.min(s.tb.a, s.tb.b)}</sup>` : '';
+        return `<div class="set-box ${s.a > s.b ? 'won' : ''}"><div class="sg">${s.a}–${s.b}${tb}</div><div class="sl">Set ${i + 1}</div></div>`;
+      }).join('');
+      $(containerSel).innerHTML = singlesHeaderHTML(me, opp, cfg) +
+        `<div class="score-strip">${setBoxes}<div class="set-box live"><div class="sg">${im.ga}–${im.gb}</div><div class="sl">${im.isTiebreakNext ? 'Tiebreak' : 'Current game'}</div></div></div>
+        <div class="tactic-panel">
+          <p class="tactic-lead">${meServing ? 'You’re serving' : 'You’re returning'} — pick your approach for this game</p>
+          <div class="tactic-choices">
+            ${keys.map(k => `<button class="tactic-btn" data-tactic="${k}">
+                <span class="tb-label">${esc(tactics[k].label)}</span>
+                <span class="tb-hint">${esc(tactics[k].hint)}</span>
+              </button>`).join('')}
+          </div>
+          <button class="btn btn-ghost" id="btn-tactic-simrest">Sim the rest of this match</button>
+        </div>`;
+      $$('.tactic-btn', $(containerSel)).forEach(b => b.addEventListener('click', () => {
+        const t = b.dataset.tactic;
+        if (im.isTiebreakNext) im.playTiebreak('A', t); else im.playGame('A', t);
+        if (im.over) { resolve(); return; }
+        render();
+      }));
+      $('#btn-tactic-simrest').addEventListener('click', () => {
+        let guard = 0;
+        while (!im.over && guard++ < 500) {
+          if (im.isTiebreakNext) im.playTiebreak('A', 'standard'); else im.playGame('A', 'standard');
+        }
+        resolve();
+      });
+    }
+    render();
+  });
+}
+
+/* ---------- tennis trivia --------------------------------------------------
+   Ten questions a round, drawn at random from the bank. Options are shuffled
+   at render time: the stored answer positions are lopsided (nothing is ever
+   the last option), and shuffling makes that irrelevant instead of having to
+   hand-balance the data every time a question is added. */
+const TRIVIA_ROUND_LEN = 10;
+let triviaState = null;
+
+$('#btn-trivia').addEventListener('click', startTrivia);
+
+function startTrivia() {
+  const picked = shuffle(TRIVIA.slice()).slice(0, Math.min(TRIVIA_ROUND_LEN, TRIVIA.length));
+  triviaState = {
+    questions: picked.map(q => {
+      const opts = q[1].map((text, i) => ({ text, correct: i === q[2] }));
+      return { q: q[0], opts: shuffle(opts), explain: q[3] };
+    }),
+    i: 0, score: 0, answered: false
+  };
+  renderTrivia();
+  show('screen-trivia');
+}
+
+function renderTrivia() {
+  const s = triviaState;
+  if (s.i >= s.questions.length) return renderTriviaResult();
+  const cur = s.questions[s.i];
+  $('#trivia-body').innerHTML = `
+    <div class="trivia-head">
+      <h2 class="screen-title" style="margin:0">Tennis trivia</h2>
+      <span class="panel-sub">Question ${s.i + 1} of ${s.questions.length} · ${s.score} correct</span>
+    </div>
+    <div class="trivia-progress"><span style="width:${(s.i / s.questions.length) * 100}%"></span></div>
+    <p class="trivia-q">${esc(cur.q)}</p>
+    <div class="trivia-opts">
+      ${cur.opts.map((o, i) => `<button class="trivia-opt" data-opt="${i}">${esc(o.text)}</button>`).join('')}
+    </div>
+    <div id="trivia-feedback"></div>`;
+  $$('.trivia-opt').forEach(b => b.addEventListener('click', () => answerTrivia(parseInt(b.dataset.opt, 10))));
+}
+
+function answerTrivia(idx) {
+  const s = triviaState;
+  if (s.answered) return;
+  s.answered = true;
+  const cur = s.questions[s.i];
+  const right = cur.opts[idx].correct;
+  if (right) s.score++;
+  $$('.trivia-opt').forEach((b, i) => {
+    b.disabled = true;
+    if (cur.opts[i].correct) b.classList.add('correct');
+    else if (i === idx) b.classList.add('wrong');
+  });
+  $('#trivia-feedback').innerHTML = `
+    <div class="trivia-feedback ${right ? 'good' : 'bad'}">
+      <strong>${right ? 'Correct' : 'Not quite'}</strong>
+      <p>${esc(cur.explain)}</p>
+    </div>
+    <div class="row-end"><button class="btn btn-primary" id="btn-trivia-next">${s.i + 1 >= s.questions.length ? 'See your score' : 'Next question'}</button></div>`;
+  $('#btn-trivia-next').addEventListener('click', () => {
+    s.i++; s.answered = false;
+    renderTrivia();
+  });
+}
+
+function renderTriviaResult() {
+  const s = triviaState;
+  const pct = Math.round(100 * s.score / s.questions.length);
+  const verdict = pct === 100 ? 'Perfect round. Nothing left to teach you.'
+    : pct >= 80 ? 'Strong. You clearly watch a lot of tennis.'
+    : pct >= 50 ? 'Respectable — a few gaps to close.'
+    : 'Room to grow. Worth another round.';
+  $('#trivia-body').innerHTML = `
+    <div class="retire-hero">
+      <div class="retire-name">Tennis trivia</div>
+      <div class="retire-tier">${s.score} / ${s.questions.length}</div>
+      <p class="retire-blurb">${esc(verdict)}</p>
+    </div>
+    <div class="retire-actions">
+      <button class="btn btn-primary btn-lg" id="btn-trivia-again">Play again</button>
+      <button class="btn btn-ghost" data-goto="screen-home">Back to menu</button>
+    </div>`;
+  $('#btn-trivia-again').addEventListener('click', startTrivia);
+  $$('#trivia-body [data-goto]').forEach(b => b.addEventListener('click', () => show(b.dataset.goto)));
 }
 </script>
 </body>

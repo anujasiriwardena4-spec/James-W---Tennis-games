@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://anujasiriwardena4-spec.github.io/James-W---Tennis-games/sitemap.xml
+Sitemap: https://baseline-tennis-tau.vercel.app/sitemap.xml

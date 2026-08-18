@@ -196,7 +196,75 @@ const LIFESTYLE_CATALOG = {
 };
 const LIFESTYLE_RESALE_PCT = 0.5;
 
+/* --- Trivia ----------------------------------------------------------------
+   [question, [options], correctIndex, explanation]. Deliberately kept to
+   long-settled facts — records that stand for decades, rules, and history —
+   rather than "current world No. 1" style questions that rot immediately.
+   ---------------------------------------------------------------------------*/
+const TRIVIA = [
+  ['What is the score called when a game reaches 40–40?', ['Deuce', 'Advantage', 'Break point', 'Set point'], 0,
+   'From deuce a player must win two straight points — advantage, then the game.'],
+  ['Which Grand Slam is played on clay?', ['Wimbledon', 'US Open', 'Roland-Garros', 'Australian Open'], 2,
+   'Roland-Garros in Paris is the only Grand Slam played on clay.'],
+  ['Which Grand Slam is played on grass?', ['Wimbledon', 'US Open', 'Roland-Garros', 'Australian Open'], 0,
+   'Wimbledon is the only remaining Grand Slam on grass, and the oldest tournament in tennis.'],
+  ['What does a score of "love" mean?', ['One point', 'Zero points', 'A tie', 'Match point'], 1,
+   'Love means zero. 15–love means the server leads by a point to nothing.'],
+  ['How many Grand Slam tournaments are there each year?', ['Three', 'Four', 'Six', 'Nine'], 1,
+   'Australian Open, Roland-Garros, Wimbledon and the US Open.'],
+  ['What is it called when the server wins the point untouched by the returner?', ['A winner', 'A let', 'An ace', 'A smash'], 2,
+   'An ace — a legal serve the returner never makes contact with.'],
+  ['In a standard set, how many games do you normally need to win it?', ['Four', 'Five', 'Six', 'Seven'], 2,
+   'Six, and you must lead by two — otherwise it goes on, usually to a tiebreak at 6–6.'],
+  ['What happens if a serve clips the net but still lands in the correct box?', ['Point to the returner', 'A let, the serve is replayed', 'A fault', 'Play continues'], 1,
+   'It is a let: that serve is simply replayed, with no penalty.'],
+  ['How many players are on court in a doubles match?', ['Two', 'Three', 'Four', 'Six'], 2,
+   'Four — two per team.'],
+  ['What is a "break of serve"?', ['Winning a game on your own serve', 'Winning a game on your opponent’s serve', 'Breaking a racquet', 'A rest period'], 1,
+   'Taking a game while your opponent is serving. Holding serve is expected; breaking is how sets are won.'],
+  ['Which surface generally produces the fastest, lowest bounce?', ['Clay', 'Grass', 'Hard court', 'Carpet'], 1,
+   'Grass — the ball skids through low and fast, which rewards big servers.'],
+  ['Which surface generally produces the slowest, highest bounce?', ['Clay', 'Grass', 'Hard court', 'Indoor hard'], 0,
+   'Clay slows the ball and kicks it up, which rewards defence and stamina.'],
+  ['How many points must you normally win a standard tiebreak by?', ['One', 'Two', 'Three', 'Four'], 1,
+   'First to seven, but you must lead by two — so tiebreaks can run well past 7.'],
+  ['What is the term for winning all four Grand Slams in one calendar year?', ['A Career Slam', 'A Golden Slam', 'A Calendar Grand Slam', 'A Triple Crown'], 2,
+   'A Calendar Grand Slam. Winning all four across a whole career instead is a Career Slam.'],
+  ['A "Golden Slam" adds which title to all four Grand Slams?', ['The Tour Finals', 'An Olympic gold medal', 'The Davis Cup', 'A Masters 1000'], 1,
+   'Olympic singles gold in the same year, on top of all four majors.'],
+  ['How many Masters 1000 tournaments are on the ATP calendar?', ['Six', 'Nine', 'Twelve', 'Four'], 1,
+   'Nine Masters 1000 events sit just below the Grand Slams in prestige.'],
+  ['What does "hold serve" mean?', ['Winning your service game', 'Delaying the serve', 'Serving twice', 'Returning a serve'], 0,
+   'Winning the game in which you were serving — the baseline expectation at tour level.'],
+  ['In tennis scoring, what comes after 30?', ['35', '40', '45', 'Game'], 1,
+   'The sequence is 15, 30, 40, then game.'],
+  ['What is a "double fault"?', ['Two aces in a row', 'Missing both serve attempts', 'Hitting the net twice', 'Two winners'], 1,
+   'Missing both first and second serve, which hands the point straight to the returner.'],
+  ['Best-of-five-set matches are played in men’s singles at which events?', ['All tour events', 'Masters 1000 only', 'Grand Slams only', 'The Tour Finals only'], 2,
+   'Only the four Grand Slams. Everything else on tour is best of three.'],
+  ['What is the "service box"?', ['The area a serve must land in', 'Where players sit', 'The umpire’s chair', 'Behind the baseline'], 0,
+   'The serve must land in the box diagonally opposite the server.'],
+  ['Which shot is hit above head height, usually to finish a point at the net?', ['Slice', 'Drop shot', 'Smash', 'Lob'], 2,
+   'The smash — an overhead put-away, usually off a short lob.'],
+  ['What is a "lob"?', ['A high ball hit over an opponent at the net', 'A very fast serve', 'A shot into the net', 'A backhand slice'], 0,
+   'A high, looping ball played over a net-rushing opponent.'],
+  ['What is a "drop shot"?', ['A powerful baseline drive', 'A softly played ball just over the net', 'A second serve', 'An overhead'], 1,
+   'A delicately played ball that barely clears the net, to drag a deep opponent forward.'],
+  ['How long is a standard singles tennis court?', ['78 feet (23.77 m)', '60 feet (18.3 m)', '94 feet (28.7 m)', '100 feet (30.5 m)'], 0,
+   '78 feet — 23.77 metres — from baseline to baseline.'],
+  ['In doubles, the court is wider by how much on each side?', ['The alleys (tramlines)', 'It is the same width', 'One metre of clay', 'The service box'], 0,
+   'The doubles alleys, also called tramlines, are in play in doubles only.'],
+  ['What is the "deciding set" tiebreak at most Grand Slams played to?', ['7 points', '10 points', '12 points', 'No tiebreak'], 1,
+   'A 10-point tiebreak at 6–6 in the final set, now standardised across the majors.'],
+  ['Which country hosts the Australian Open?', ['Austria', 'Australia', 'New Zealand', 'South Africa'], 1,
+   'Melbourne, Australia — the first Grand Slam of the calendar year.'],
+  ['What is the ATP?', ['A tournament', 'The men’s professional tour body', 'A racquet brand', 'A scoring system'], 1,
+   'The Association of Tennis Professionals, which runs the men’s tour.'],
+  ['What does "unforced error" mean?', ['A point lost to a great shot', 'A mistake not caused by opponent pressure', 'A foot fault', 'A broken string'], 1,
+   'A miss you had full control over — nothing about the opponent’s shot forced it.']
+];
+
 if (typeof module !== 'undefined') {
   module.exports = { ATTRS, ATTR_KEYS, SURFACES, TOUR_RAW, POOL_RAW, PTS, PRIZE_BY_CAT, PRIZE_DEFAULT,
-    CALENDAR, ROUND_NAMES_32, COUNTRIES, FIRST_NAMES, LAST_NAMES, LIFESTYLE_CATALOG, LIFESTYLE_RESALE_PCT };
+    CALENDAR, ROUND_NAMES_32, COUNTRIES, FIRST_NAMES, LAST_NAMES, LIFESTYLE_CATALOG, LIFESTYLE_RESALE_PCT, TRIVIA };
 }

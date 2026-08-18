@@ -397,6 +397,28 @@ button,input,select{font:inherit;color:inherit}
 .dteam-box .dt-sub{color:var(--dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
 .dteam-box.dwin .dt-names{color:var(--acc)}
 
+/* ---------- trivia ---------- */
+.trivia-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.trivia-progress{height:4px;background:var(--bg-2);border-radius:999px;overflow:hidden;margin-bottom:22px}
+.trivia-progress span{display:block;height:100%;background:var(--acc);border-radius:999px;transition:width .3s ease}
+.trivia-q{font-family:var(--font-cond);font-size:clamp(21px,3.4vw,28px);line-height:1.25;margin-bottom:20px;text-wrap:balance}
+.trivia-opts{display:grid;gap:10px}
+.trivia-opt{
+  background:var(--bg-2);border:1px solid var(--line);border-radius:12px;
+  padding:14px 16px;text-align:left;cursor:pointer;color:var(--txt);font-size:15px;transition:.15s;
+}
+.trivia-opt:hover:not(:disabled){border-color:var(--acc);background:#1b2a36}
+.trivia-opt:disabled{cursor:default}
+.trivia-opt.correct{border-color:var(--acc);background:rgba(212,255,63,.12);color:var(--acc);font-weight:600}
+.trivia-opt.wrong{border-color:var(--bad);background:rgba(248,113,113,.1);color:var(--bad)}
+.trivia-feedback{margin-top:18px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg-2)}
+.trivia-feedback.good{border-color:rgba(212,255,63,.35)}
+.trivia-feedback.bad{border-color:rgba(248,113,113,.35)}
+.trivia-feedback strong{font-family:var(--font-cond);font-size:18px;text-transform:uppercase;letter-spacing:.04em}
+.trivia-feedback.good strong{color:var(--acc)}
+.trivia-feedback.bad strong{color:var(--bad)}
+.trivia-feedback p{color:var(--muted);font-size:14px;line-height:1.55;margin-top:5px}
+
 /* ---------- lifestyle shop ---------- */
 .shop-section{margin-top:26px}
 .shop-section-title{font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
