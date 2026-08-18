@@ -11,6 +11,9 @@ let builder = null;
 let identity = { name: '', country: 'AUS', age: 19, hand: 'R', bh: 2 };
 let rankMode = 'live';
 let busy = false;
+// where a completed build should land: 'career' (default) or a doubles seat
+let builderTarget = 'career';
+let doublesSlots = [null, null, null, null];
 
 /* ---------- chrome ------------------------------------------------------- */
 function show(id) {
@@ -72,6 +75,13 @@ function vClass(v) { return v >= 93 ? 'v-elite' : v >= 86 ? 'v-great' : v >= 76 
 function surfTag(s) { return `<span class="surf-tag s-${s}">${SURFACES[s].label}</span>`; }
 function catLabel(c) { return { gs: 'Grand Slam', m1000: 'Masters 1000', atp500: 'ATP 500', finals: 'Tour Finals' }[c] || c; }
 function fmtPts(n) { return n.toLocaleString('en-US'); }
+function fmtMoney(n) {
+  const s = n < 0 ? '-' : '';
+  n = Math.abs(n);
+  if (n >= 1e6) return s + '$' + (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'm';
+  if (n >= 1e3) return s + '$' + Math.round(n / 1e3) + 'k';
+  return s + '$' + n;
+}
 
 /* ---------- home --------------------------------------------------------- */
 $('#btn-new').addEventListener('click', () => {
@@ -226,7 +236,18 @@ $('#attr-choices').addEventListener('click', e => {
   builder.take(key);
   toast(`${label} taken from ${from}`, 'good');
   renderBuilder();
-  if (builder.done) { revealPlayer(); return; }
+  if (builder.done) {
+    if (builderTarget !== 'career') {
+      const target = builderTarget;
+      builderTarget = 'career';
+      doublesSlots[target.slot] = makePlayer(target.name, 'AUS', builder.attrs(), { age: 19 + rndInt(8) });
+      renderDoublesSetup();
+      show('screen-doubles-setup');
+      return;
+    }
+    revealPlayer();
+    return;
+  }
   $('#spin-card').hidden = true;
   $('#spin-empty').hidden = false;
   $('#spin-empty').querySelector('p').textContent =
@@ -301,7 +322,10 @@ function renderHub() {
     <div>
       <div class="hh-name">${esc(u.name)}</div>
       <div class="hh-sub">${u.country} · ${u.age} yrs · OVR ${ovr} · ${career.year} season</div>
-      <button class="btn btn-ghost hh-retire" id="btn-retire-now">Retire</button>
+      <div class="hh-btnrow">
+        <button class="btn btn-ghost hh-lifestyle" id="btn-lifestyle-now">Lifestyle</button>
+        <button class="btn btn-ghost hh-retire" id="btn-retire-now">Retire</button>
+      </div>
     </div>
     <div class="hh-stats">
       <div class="hh-stat"><b>${u.rank}</b><span>Rank</span></div>
@@ -309,6 +333,7 @@ function renderHub() {
       <div class="hh-stat"><b>${u.season.w}-${u.season.l}</b><span>Season</span></div>
       <div class="hh-stat"><b>${u.career.titles}</b><span>Titles</span></div>
       <div class="hh-stat"><b>${u.career.slams}</b><span>Slams</span></div>
+      <div class="hh-stat"><b>${fmtMoney(career.netWorth())}</b><span>Net worth</span></div>
       <div class="hh-stat meter">
         <div class="meter-lab"><span>Form</span><span>${Math.round((u.form - 0.9) * 500)}%</span></div>
         <span class="bar-track"><span class="bar-fill fill-form" style="width:${Math.round((u.form - 0.9) * 500)}%"></span></span>
@@ -332,6 +357,7 @@ function renderHub() {
   $('#news-list').innerHTML = career.messages.slice(0, 14)
     .map(m => `<li class="${m.kind}">${esc(m.msg)}</li>`).join('') || '<li>Season not started.</li>';
   $('#btn-retire-now').addEventListener('click', doRetire);
+  $('#btn-lifestyle-now').addEventListener('click', () => { renderLifestyle(); show('screen-lifestyle'); });
 }
 
 /* ---------- retirement ---------------------------------------------------- */
@@ -395,7 +421,7 @@ function renderCalendar() {
       <span class="cal-wk">WK ${ev.week}</span>
       <div>
         <div class="cal-name">${esc(ev.name)}</div>
-        <div class="cal-sub">${surfTag(ev.surface)}<span class="${ev.cat === 'gs' ? 'cat-gs' : ''}">${catLabel(ev.cat)}</span><span>${esc(ev.city)}</span>${ev.bestOf === 5 ? '<span>best of 5</span>' : ''}</div>
+        <div class="cal-sub">${surfTag(ev.surface)}<span class="${ev.cat === 'gs' ? 'cat-gs' : ''}">${catLabel(ev.cat)}</span><span>${esc(ev.city)}</span>${ev.bestOf === 5 ? '<span>best of 5</span>' : ''}<span class="cal-prize">${fmtMoney(PRIZE_BY_CAT[ev.cat] || PRIZE_DEFAULT)} to win</span></div>
       </div>
       ${right}
     </li>`;
@@ -444,8 +470,8 @@ function openEvent(userEnters) {
     // user isn't in this draw at all
     simThroughNoUser();
   } else {
-    $('#ev-actions').innerHTML = `<button class="btn btn-primary btn-lg" id="btn-play">${career.current.phase === 'qual' ? 'Play qualifying' : 'Play first round'}</button>`;
-    $('#btn-play').addEventListener('click', playRound);
+    $('#ev-actions').innerHTML = playButtonsHTML(career.current.phase === 'qual' ? 'Play qualifying' : 'Play first round');
+    wirePlayButtons();
     $('#match-view').innerHTML = `<div class="round-label">${career.current.phase === 'qual'
       ? `Ranked #${career.user.rank} — you have to qualify` : 'Main draw'}</div>
       <p style="text-align:center;color:var(--muted)">Draw is out. ${career.current.phase === 'qual'
@@ -524,6 +550,104 @@ async function revealMatch(m, out) {
   showOtherResults(out.matches, me.id);
 }
 
+/* ---------- play it yourself ----------------------------------------------
+   Not real-time control — this engine is a point-probability model, not a
+   physics one — but a genuine per-game tactical choice instead of watching
+   the whole match auto-resolve. The user is always side 'A' here, since the
+   InteractiveMatch is constructed with them first. */
+async function playRoundInteractive() {
+  if (busy) return;
+  busy = true;
+  $('#ev-actions').innerHTML = '';
+  const c = career.current;
+  const t = c.phase === 'qual' ? c.qual : c.main;
+  const opp = userOpponentIn(t);
+  if (!opp) { busy = false; playRound(); return; }   // shouldn't happen; fall back safely
+  const im = new InteractiveMatch(career.user, opp, { surface: c.ev.surface, bestOf: c.ev.bestOf });
+  await runInteractiveMatch(im, opp);
+  const res = im.result();
+  showInteractiveResult(im, opp, res);
+  const out = career.advance({ playerId: career.user.id, res });
+  renderBracket();
+  showOtherResults(out.matches, career.user.id);
+  renderEventActions(out);
+  busy = false;
+}
+
+function runInteractiveMatch(im, opp) {
+  const me = career.user;
+  return new Promise(resolve => {
+    function render() {
+      const meServing = im.server === 'A';
+      const tactics = meServing ? TACTIC.serve : TACTIC.ret;
+      const keys = meServing ? ['power', 'standard', 'safe'] : ['aggressive', 'standard', 'safe'];
+      const setBoxes = im.sets.map((s, i) => {
+        const tb = s.tb ? `<sup>${Math.min(s.tb.a, s.tb.b)}</sup>` : '';
+        return `<div class="set-box ${s.a > s.b ? 'won' : ''}"><div class="sg">${s.a}–${s.b}${tb}</div><div class="sl">Set ${i + 1}</div></div>`;
+      }).join('');
+      const liveLabel = im.isTiebreakNext ? 'Tiebreak' : 'Current game';
+      $('#match-view').innerHTML = `
+        <div class="round-label">Playing it yourself</div>
+        <div class="matchup">
+          <div class="mp you"><div class="mp-name">${esc(me.name)}</div><div class="mp-sub">${me.country} · OVR ${overall(me)}</div></div>
+          <div class="vs">VS</div>
+          <div class="mp"><div class="mp-name">${esc(opp.name)}</div><div class="mp-sub">${opp.country} · OVR ${overall(opp)}</div></div>
+        </div>
+        <div class="score-strip">${setBoxes}<div class="set-box live"><div class="sg">${im.ga}–${im.gb}</div><div class="sl">${liveLabel}</div></div></div>
+        <div class="tactic-panel">
+          <p class="tactic-lead">${meServing ? 'You’re serving' : 'You’re returning'} — pick your approach for this game</p>
+          <div class="tactic-choices">
+            ${keys.map(k => `<button class="tactic-btn" data-tactic="${k}">
+                <span class="tb-label">${esc(tactics[k].label)}</span>
+                <span class="tb-hint">${esc(tactics[k].hint)}</span>
+              </button>`).join('')}
+          </div>
+          <button class="btn btn-ghost" id="btn-sim-rest-interactive">Sim the rest of this match</button>
+        </div>`;
+      $$('.tactic-btn').forEach(b => b.addEventListener('click', () => {
+        const tactic = b.dataset.tactic;
+        if (im.isTiebreakNext) im.playTiebreak('A', tactic); else im.playGame('A', tactic);
+        if (im.over) { resolve(); return; }
+        render();
+      }));
+      $('#btn-sim-rest-interactive').addEventListener('click', () => {
+        let guard = 0;
+        while (!im.over && guard++ < 500) {
+          if (im.isTiebreakNext) im.playTiebreak('A', 'standard'); else im.playGame('A', 'standard');
+        }
+        resolve();
+      });
+    }
+    render();
+  });
+}
+
+function showInteractiveResult(im, opp, res) {
+  const me = career.user;
+  const won = res.winnerId === me.id;
+  const ms = res.stats.A, ts = res.stats.B;
+  const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '—';
+  $('#match-view').innerHTML = `
+    <div class="round-label">Playing it yourself</div>
+    <div class="matchup">
+      <div class="mp you"><div class="mp-name">${esc(me.name)}</div><div class="mp-sub">${me.country} · OVR ${overall(me)}</div></div>
+      <div class="vs">VS</div>
+      <div class="mp"><div class="mp-name">${esc(opp.name)}</div><div class="mp-sub">${opp.country} · OVR ${overall(opp)}</div></div>
+    </div>
+    <div class="score-strip">${res.sets.map((s, i) => {
+      const tb = s.tb ? `<sup>${Math.min(s.tb.a, s.tb.b)}</sup>` : '';
+      return `<div class="set-box ${s.a > s.b ? 'won' : ''}"><div class="sg">${s.a}–${s.b}${tb}</div><div class="sl">Set ${i + 1}</div></div>`;
+    }).join('')}</div>
+    <div class="match-result ${won ? 'win' : 'loss'}">${won ? 'You win' : 'You lose'} · ${res.minutes} minutes</div>
+    <table class="stat-table">
+      <tr><td>${ms.aces}</td><td>Aces</td><td>${ts.aces}</td></tr>
+      <tr><td>${ms.df}</td><td>Double faults</td><td>${ts.df}</td></tr>
+      <tr><td>${pct(ms.svPtsWon, ms.svPts)}</td><td>Serve points won</td><td>${pct(ts.svPtsWon, ts.svPts)}</td></tr>
+      <tr><td>${ms.winners}</td><td>Winners</td><td>${ts.winners}</td></tr>
+      <tr><td>${ms.ptsWon}</td><td>Total points</td><td>${ts.ptsWon}</td></tr>
+    </table>`;
+}
+
 function showOtherResults(matches, meId) {
   const others = matches.filter(m => m.a.id !== meId && m.b.id !== meId).slice(0, 8);
   if (!others.length) return;
@@ -540,7 +664,7 @@ function renderEventActions(out) {
   const backBtn = `<button class="btn btn-ghost" id="btn-back-hub">Back to the tour</button>`;
 
   if (c.phase === 'qual' && !c.qual.champion) {
-    box.innerHTML = `<button class="btn btn-primary btn-lg" id="btn-play">Play qualifying final</button>`;
+    box.innerHTML = playButtonsHTML('Play qualifying final');
   } else if (out && out.qualDone && !c.userInMain) {
     box.innerHTML = `<button class="btn btn-primary" id="btn-sim">Watch the main draw</button>` + backBtn;
   } else if (c.main && c.main.champion) {
@@ -550,13 +674,34 @@ function renderEventActions(out) {
     box.innerHTML = `<button class="btn btn-primary" id="btn-sim">Play out the rest</button>` + backBtn;
   } else if (c.main && !c.main.champion) {
     const nextName = c.main.roundName(c.main.roundIndex);
-    box.innerHTML = `<button class="btn btn-primary btn-lg" id="btn-play">Play ${nextName.toLowerCase()}</button>`;
+    box.innerHTML = playButtonsHTML('Play ' + nextName.toLowerCase());
   } else {
     box.innerHTML = backBtn;
   }
-  if ($('#btn-play')) $('#btn-play').addEventListener('click', playRound);
+  wirePlayButtons();
   if ($('#btn-sim'))  $('#btn-sim').addEventListener('click', simThrough);
   if ($('#btn-back-hub')) $('#btn-back-hub').addEventListener('click', afterEvent);
+}
+
+// "Play it yourself" only makes sense when the user actually has a match
+// coming up in the live tournament — not every ev-actions state reaches here
+// with one (e.g. after elimination), so it's a no-op button-set otherwise.
+function playButtonsHTML(simLabel) {
+  const c = career.current;
+  const t = c && (c.phase === 'qual' ? c.qual : c.main);
+  const hasUserMatch = t && !t.champion && userOpponentIn(t);
+  return `<button class="btn btn-primary btn-lg" id="btn-play">${esc(simLabel)}</button>` +
+    (hasUserMatch ? `<button class="btn btn-ghost btn-lg" id="btn-play-yourself">Play it yourself</button>` : '');
+}
+function wirePlayButtons() {
+  if ($('#btn-play')) $('#btn-play').addEventListener('click', playRound);
+  if ($('#btn-play-yourself')) $('#btn-play-yourself').addEventListener('click', playRoundInteractive);
+}
+function userOpponentIn(t) {
+  const idx = t.alive.findIndex(p => p.isUser);
+  if (idx < 0) return null;
+  const partnerIdx = idx % 2 === 0 ? idx + 1 : idx - 1;
+  return t.alive[partnerIdx] || null;
 }
 
 async function simThrough() {
@@ -680,6 +825,79 @@ function renderSeasonEnd() {
   $('#btn-offseason').addEventListener('click', renderOffseason);
 }
 
+/* ---------- lifestyle ------------------------------------------------------
+   What prize money buys off the court. Houses and the coaching team carry a
+   small permanent attribute nudge (see LIFESTYLE_CATALOG); cars are flex. */
+const LIFESTYLE_CAT_LABEL = { house: 'Housing', car: 'Cars', team: 'Team & Coaching' };
+
+function lifestylePerkText(item) {
+  const bits = [];
+  for (const k in (item.attrBonus || {})) {
+    bits.push('+' + item.attrBonus[k] + ' ' + ATTRS.find(a => a.key === k).label);
+  }
+  if (item.trainingBonus) bits.push('+' + item.trainingBonus + ' training pt/season');
+  return bits.length ? bits.join(', ') : 'Pure flex — no gameplay bonus';
+}
+
+function renderLifestyle() {
+  const owned = career.finances.owned;
+  const cash = career.cashOnHand(), net = career.netWorth();
+  const sections = Object.keys(LIFESTYLE_CATALOG).map(cat => {
+    const tiers = LIFESTYLE_CATALOG[cat];
+    const currentTier = owned[cat];
+    const cards = tiers.map((item, i) => {
+      const isOwned = currentTier === i;
+      const resale = currentTier != null ? Math.round(tiers[currentTier].price * LIFESTYLE_RESALE_PCT) : 0;
+      const netCost = item.price - resale;
+      const afford = isOwned || netCost <= cash;
+      let btnLabel = 'Buy · ' + fmtMoney(item.price);
+      if (isOwned) btnLabel = 'Owned';
+      else if (currentTier != null && i > currentTier) btnLabel = 'Upgrade · ' + fmtMoney(netCost) + ' net';
+      else if (currentTier != null && i < currentTier) btnLabel = 'Switch · ' + fmtMoney(netCost) + ' net';
+      return `<div class="shop-card ${isOwned ? 'owned' : ''}">
+          <div class="shop-card-name">${esc(item.name)}</div>
+          <p class="shop-card-blurb">${esc(item.blurb)}</p>
+          <div class="shop-card-perk">${esc(lifestylePerkText(item))}</div>
+          <button class="btn ${isOwned ? 'btn-ghost' : 'btn-primary'}" ${isOwned || !afford ? 'disabled' : ''}
+            data-buy-cat="${cat}" data-buy-tier="${i}">${isOwned ? 'Owned' : (afford ? btnLabel : 'Can’t afford')}</button>
+        </div>`;
+    }).join('');
+    return `<div class="shop-section">
+        <h3 class="shop-section-title">${LIFESTYLE_CAT_LABEL[cat]}</h3>
+        <div class="shop-grid">${cards}</div>
+      </div>`;
+  }).join('');
+
+  $('#lifestyle-body').innerHTML = `
+    <div class="panel-head">
+      <h2 class="screen-title" style="margin:0">Lifestyle</h2>
+      <span class="panel-sub">${fmtMoney(cash)} cash · ${fmtMoney(net)} net worth</span>
+    </div>
+    <p class="saves-intro">Houses and coaching staff nudge your attributes a little — the same clamp
+      training already uses. Cars are just for showing off. Upgrading sells the old one back at half price.</p>
+    ${sections}
+    <div class="row-end"><button class="btn btn-ghost" id="btn-lifestyle-back">Back to the tour</button></div>`;
+
+  $('#btn-lifestyle-back').addEventListener('click', () => { renderHub(); show('screen-hub'); });
+  $$('[data-buy-cat]').forEach(b => b.addEventListener('click', async () => {
+    const cat = b.dataset.buyCat, tier = parseInt(b.dataset.buyTier, 10);
+    const item = LIFESTYLE_CATALOG[cat][tier];
+    const currentTier = career.finances.owned[cat];
+    const resale = currentTier != null ? Math.round(LIFESTYLE_CATALOG[cat][currentTier].price * LIFESTYLE_RESALE_PCT) : 0;
+    const netCost = item.price - resale;
+    const body = currentTier != null
+      ? `Sell ${LIFESTYLE_CATALOG[cat][currentTier].name} back for ${fmtMoney(resale)} and buy ${item.name} for ${fmtMoney(item.price)} — ${fmtMoney(netCost)} net.`
+      : `Buy ${item.name} for ${fmtMoney(item.price)}?`;
+    const ok = await modalConfirm('Confirm purchase', body, 'Buy', false);
+    if (!ok) return;
+    const r = career.buyItem(cat, tier);
+    if (!r.ok) { toast(r.reason === 'not enough cash' ? "Can't afford that" : 'Purchase failed', 'bad'); return; }
+    career.save();
+    toast(`Bought ${item.name}`, 'good');
+    renderLifestyle();
+  }));
+}
+
 /* ---------- off-season --------------------------------------------------- */
 function renderOffseason() {
   const u = career.user;
@@ -720,4 +938,119 @@ function renderOffseason() {
   };
   draw();
   show('screen-offseason');
+}
+
+/* ---------- local 2v2 ----------------------------------------------------
+   A stateless exhibition mode, independent of any career or save slot:
+   fill four seats (spin the wheel for a real build, or drop in a random
+   tour pro), then simulate a doubles match on this device. */
+const DOUBLES_SEAT_LABEL = ['Team A · P1', 'Team A · P2', 'Team B · P1', 'Team B · P2'];
+
+$('#btn-doubles').addEventListener('click', () => { renderDoublesSetup(); show('screen-doubles-setup'); });
+
+function renderDoublesSetup() {
+  for (let i = 0; i < 4; i++) {
+    const el = $('#dslot-' + i);
+    const p = doublesSlots[i];
+    if (!p) {
+      el.className = 'doubles-slot';
+      el.innerHTML = `
+        <div class="dslot-empty">
+          <input type="text" class="dslot-name-input" id="dname-${i}" placeholder="${DOUBLES_SEAT_LABEL[i]}" maxlength="18">
+          <div class="dslot-btns">
+            <button class="btn btn-primary" data-build="${i}">Build</button>
+            <button class="btn btn-ghost" data-random="${i}">Random pro</button>
+          </div>
+        </div>`;
+    } else {
+      el.className = 'doubles-slot filled';
+      el.innerHTML = `
+        <div class="dslot-card">
+          <div class="dslot-card-info">
+            <div class="dslot-card-name">${esc(p.name)}</div>
+            <div class="dslot-card-meta">${p.country} · ${p.hand === 'L' ? 'Left' : 'Right'}-handed</div>
+          </div>
+          <div class="dslot-card-ovr">${overall(p)}</div>
+          <button class="dslot-clear" data-clear="${i}" title="Clear this seat">&times;</button>
+        </div>`;
+    }
+  }
+  $$('[data-build]').forEach(b => b.addEventListener('click', () => {
+    const i = parseInt(b.dataset.build, 10);
+    const input = $('#dname-' + i);
+    const name = (input.value || '').trim() || DOUBLES_SEAT_LABEL[i];
+    builderTarget = { slot: i, name };
+    resetBuilder();
+    show('screen-builder');
+  }));
+  $$('[data-random]').forEach(b => b.addEventListener('click', () => {
+    const i = parseInt(b.dataset.random, 10);
+    const row = pick(TOUR_RAW);
+    doublesSlots[i] = makePlayer(row[0], row[1], {
+      serve: row[4], forehand: row[5], backhand: row[6], ret: row[7],
+      movement: row[8], net: row[9], stamina: row[10], mental: row[11]
+    }, { hand: row[2], bh: row[3], age: 20 + rndInt(12) });
+    renderDoublesSetup();
+  }));
+  $$('[data-clear]').forEach(b => b.addEventListener('click', () => {
+    doublesSlots[parseInt(b.dataset.clear, 10)] = null;
+    renderDoublesSetup();
+  }));
+  $('#btn-play-doubles').disabled = !doublesSlots.every(Boolean);
+}
+
+$('#btn-play-doubles').addEventListener('click', () => {
+  const surface = $('.seg-btn.active', $('#seg-dsurface')).dataset.v;
+  playDoublesMatch(surface);
+});
+
+async function playDoublesMatch(surface) {
+  const teamA = [doublesSlots[0], doublesSlots[1]];
+  const teamB = [doublesSlots[2], doublesSlots[3]];
+  show('screen-doubles-match');
+  $('#doubles-match-view').innerHTML = `
+    <div class="doubles-scoreboard">
+      <div class="dteam-box" id="dbox-a"><div class="dt-names">${esc(teamA[0].name)} &amp; ${esc(teamA[1].name)}</div><div class="dt-sub">Team A</div></div>
+      <div class="vs">VS</div>
+      <div class="dteam-box" id="dbox-b"><div class="dt-names">${esc(teamB[0].name)} &amp; ${esc(teamB[1].name)}</div><div class="dt-sub">Team B</div></div>
+    </div>
+    <div class="score-strip" id="dscore-strip"></div>
+    <div id="doubles-outcome"></div>`;
+  $('#doubles-match-actions').innerHTML = '';
+
+  const res = simDoublesMatch(teamA, teamB, { surface, bestOf: 3 });
+  const strip = $('#dscore-strip');
+  for (let i = 0; i < res.sets.length; i++) {
+    await sleep(620);
+    const s = res.sets[i];
+    const tb = s.tb ? `<sup>${Math.min(s.tb.a, s.tb.b)}</sup>` : '';
+    const box = document.createElement('div');
+    box.className = 'set-box ' + (s.a > s.b ? 'won' : '');
+    box.innerHTML = `<div class="sg">${s.a}–${s.b}${tb}</div><div class="sl">Set ${i + 1}</div>`;
+    strip.appendChild(box);
+  }
+  await sleep(400);
+  const aWon = res.winnerSide === 'A';
+  $('#dbox-a').classList.toggle('dwin', aWon);
+  $('#dbox-b').classList.toggle('dwin', !aWon);
+  const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '—';
+  const winners = aWon ? teamA : teamB;
+  $('#doubles-outcome').innerHTML = `
+    <div class="match-result win">${esc(winners[0].name)} &amp; ${esc(winners[1].name)} win · ${res.minutes} minutes</div>
+    <table class="stat-table">
+      <tr><td>${res.stats.A.aces}</td><td>Aces</td><td>${res.stats.B.aces}</td></tr>
+      <tr><td>${res.stats.A.df}</td><td>Double faults</td><td>${res.stats.B.df}</td></tr>
+      <tr><td>${pct(res.stats.A.svPtsWon, res.stats.A.svPts)}</td><td>Serve points won</td><td>${pct(res.stats.B.svPtsWon, res.stats.B.svPts)}</td></tr>
+      <tr><td>${res.stats.A.winners}</td><td>Winners</td><td>${res.stats.B.winners}</td></tr>
+      <tr><td>${res.stats.A.ptsWon}</td><td>Total points</td><td>${res.stats.B.ptsWon}</td></tr>
+    </table>`;
+  $('#doubles-match-actions').innerHTML = `
+    <button class="btn btn-ghost" id="btn-doubles-rematch">Rematch, same teams</button>
+    <button class="btn btn-primary" id="btn-doubles-newsetup">New 2v2</button>`;
+  $('#btn-doubles-rematch').addEventListener('click', () => playDoublesMatch(surface));
+  $('#btn-doubles-newsetup').addEventListener('click', () => {
+    doublesSlots = [null, null, null, null];
+    renderDoublesSetup();
+    show('screen-doubles-setup');
+  });
 }

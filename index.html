@@ -31,6 +31,7 @@
       <div class="home-actions">
         <button class="btn btn-primary btn-lg" id="btn-new">Build a player</button>
         <button class="btn btn-ghost btn-lg" id="btn-careers">Your careers</button>
+        <button class="btn btn-ghost btn-lg" id="btn-doubles">Local 2v2</button>
       </div>
 
       <div class="home-rules">
@@ -226,6 +227,11 @@
     <div class="panel narrow" id="retirement-body"></div>
   </section>
 
+  <!-- ================= LIFESTYLE ================= -->
+  <section class="screen" id="screen-lifestyle">
+    <div class="panel" id="lifestyle-body"></div>
+  </section>
+
   <!-- ================= YOUR CAREERS (save slots) ================= -->
   <section class="screen" id="screen-saves">
     <div class="panel narrow">
@@ -233,6 +239,51 @@
       <p class="saves-intro">Up to three careers, saved right here in this browser. Nothing is sent anywhere.</p>
       <div id="saves-list"></div>
       <div class="row-end"><button class="btn btn-ghost" data-goto="screen-home">Back</button></div>
+    </div>
+  </section>
+
+  <!-- ================= LOCAL 2v2 SETUP ================= -->
+  <section class="screen" id="screen-doubles-setup">
+    <div class="panel">
+      <h2 class="screen-title">Local 2v2</h2>
+      <p class="saves-intro">Fill all four seats — spin the wheel for a real build, or drop in a random
+        tour pro to fill a seat fast. Pass the device around; everyone builds in turn.</p>
+      <div class="doubles-teams">
+        <div class="doubles-team">
+          <h3 class="doubles-team-name team-a">Team A</h3>
+          <div class="doubles-slot" id="dslot-0" data-slot="0"></div>
+          <div class="doubles-slot" id="dslot-1" data-slot="1"></div>
+        </div>
+        <div class="doubles-vs">VS</div>
+        <div class="doubles-team">
+          <h3 class="doubles-team-name team-b">Team B</h3>
+          <div class="doubles-slot" id="dslot-2" data-slot="2"></div>
+          <div class="doubles-slot" id="dslot-3" data-slot="3"></div>
+        </div>
+      </div>
+      <div class="doubles-options">
+        <div class="field">
+          <span>Surface</span>
+          <div class="seg" id="seg-dsurface">
+            <button class="seg-btn active" data-v="hard">Hard</button>
+            <button class="seg-btn" data-v="clay">Clay</button>
+            <button class="seg-btn" data-v="grass">Grass</button>
+          </div>
+        </div>
+      </div>
+      <div class="row-end">
+        <button class="btn btn-ghost" data-goto="screen-home">Back</button>
+        <button class="btn btn-primary btn-lg" id="btn-play-doubles" disabled>Play the match</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LOCAL 2v2 MATCH ================= -->
+  <section class="screen" id="screen-doubles-match">
+    <div class="panel">
+      <h2 class="screen-title">2v2 exhibition</h2>
+      <div id="doubles-match-view"></div>
+      <div class="row-end" id="doubles-match-actions"></div>
     </div>
   </section>
 

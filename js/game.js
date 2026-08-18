@@ -100,6 +100,10 @@ class Career {
     this.seasonLog = [];
     this.honours = [];
     this.injuryWeeks = 0;
+    // cash on hand is career prize money minus whatever's been spent on
+    // lifestyle purchases — the prize total itself never moves, so career-long
+    // "money earned" stats stay accurate even after you've spent plenty of it
+    this.finances = { spent: 0, owned: { house: null, car: null, team: null } };
 
     this.user = opts.user;
     this.tour = buildTour(TOUR_RAW);
@@ -220,7 +224,7 @@ class Career {
     if (qualified) {
       const row = out.table[this.user.id];
       userResult = out.champion.isUser ? 'Champion' : (row.w >= 2 ? 'Semi-final' : 'Group stage');
-      this.user.career.prize += out.champion.isUser ? 4800000 : 1200000;
+      this.user.career.prize += out.champion.isUser ? PRIZE_BY_CAT.finals : 1200000;
     }
     this.seasonLog.push({ ev: ev.id, name: ev.name, surface: ev.surface, result: userResult, pts: this.user.res[ev.id] || 0 });
     if (out.champion.isUser) this.honours.push({ year: this.year, text: 'Tour Finals champion' });
@@ -229,11 +233,13 @@ class Career {
   }
 
   /* one round at a time so the UI can watch the user's match ------------- */
-  advance() {
+  // overrideResult: { playerId, res } — pass a result the user already
+  // played by hand (InteractiveMatch) instead of letting simMatch resolve it
+  advance(overrideResult) {
     const c = this.current;
     if (!c || c.finished) return null;
     if (c.phase === 'qual') {
-      const ms = c.qual.playRound();
+      const ms = c.qual.playRound(overrideResult);
       const userMatch = ms.find(m => m.a.isUser || m.b.isUser) || null;
       const userThrough = userMatch ? userMatch.res.winnerId === this.user.id : false;
       if (c.qual.champion) {
@@ -246,7 +252,7 @@ class Career {
       }
       return { phase: 'qual', matches: ms, userMatch, userThrough, qualDone: !!c.qual.champion };
     }
-    const ms = c.main.playRound();
+    const ms = c.main.playRound(overrideResult);
     const userMatch = ms.find(m => m.a.isUser || m.b.isUser) || null;
     const userThrough = userMatch ? userMatch.res.winnerId === this.user.id : false;
     c.roundIdx = c.main.roundIndex;
@@ -273,7 +279,7 @@ class Career {
     c.main.awardPoints();
     c.finished = true;
     const champ = c.main.champion;
-    const money = { gs: 3000000, m1000: 1100000, atp500: 500000 }[c.ev.cat] || 400000;
+    const money = PRIZE_BY_CAT[c.ev.cat] || PRIZE_DEFAULT;
     champ.career.prize += money;
     const label = champ.isUser ? 'good' : 'info';
     this.say(`${champ.name} wins ${c.ev.name} (${c.ev.city}).`, label);
@@ -378,7 +384,42 @@ class Career {
 
   trainingPoints() {
     const a = this.user.age;
-    return a <= 23 ? 6 : a <= 26 ? 5 : a <= 29 ? 4 : 3;
+    const base = a <= 23 ? 6 : a <= 26 ? 5 : a <= 29 ? 4 : 3;
+    const teamTier = this.finances.owned.team;
+    const bonus = teamTier != null ? (LIFESTYLE_CATALOG.team[teamTier].trainingBonus || 0) : 0;
+    return base + bonus;
+  }
+
+  /* --- lifestyle: what prize money buys off the court --------------------
+     cashOnHand is prize money minus what's been spent — career.prize itself
+     never moves, so "career earnings" stats stay accurate after a purchase.
+     netWorth adds back the sticker price of everything currently owned. */
+  cashOnHand() { return this.user.career.prize - this.finances.spent; }
+  netWorth() {
+    let owned = 0;
+    for (const cat in this.finances.owned) {
+      const tier = this.finances.owned[cat];
+      if (tier != null) owned += LIFESTYLE_CATALOG[cat][tier].price;
+    }
+    return this.cashOnHand() + owned;
+  }
+  buyItem(category, tierIndex) {
+    const tiers = LIFESTYLE_CATALOG[category];
+    if (!tiers || !tiers[tierIndex]) return { ok: false, reason: 'no such item' };
+    const item = tiers[tierIndex];
+    const currentTier = this.finances.owned[category];
+    if (currentTier === tierIndex) return { ok: false, reason: 'already owned' };
+    const resale = currentTier != null ? Math.round(tiers[currentTier].price * LIFESTYLE_RESALE_PCT) : 0;
+    const netCost = item.price - resale;
+    if (netCost > this.cashOnHand()) return { ok: false, reason: 'not enough cash' };
+    if (currentTier != null) {
+      const old = tiers[currentTier];
+      for (const k in (old.attrBonus || {})) this.user.attrs[k] = clamp(this.user.attrs[k] - old.attrBonus[k], 40, 99);
+    }
+    for (const k in (item.attrBonus || {})) this.user.attrs[k] = clamp(this.user.attrs[k] + item.attrBonus[k], 40, 99);
+    this.finances.spent += netCost;
+    this.finances.owned[category] = tierIndex;
+    return { ok: true, netCost, resale };
   }
 
   /* --- retirement: the actual end of the game ----------------------------
@@ -416,7 +457,7 @@ class Career {
       v: 2, seed: this.seed, year: this.year, startYear: this.startYear,
       seasonsCompleted: this.seasonsCompleted, eventIndex: this.eventIndex, week: this.week,
       messages: this.messages, seasonLog: this.seasonLog, honours: this.honours,
-      entries: this.entries, injuryWeeks: this.injuryWeeks,
+      entries: this.entries, injuryWeeks: this.injuryWeeks, finances: this.finances,
       user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim),
       meta: {
         name: this.user.name, country: this.user.country, age: this.user.age,
@@ -466,6 +507,7 @@ class Career {
     c.eventIndex = d.eventIndex; c.week = d.week;
     c.messages = d.messages || []; c.seasonLog = d.seasonLog || []; c.honours = d.honours || [];
     c.entries = d.entries || {}; c.injuryWeeks = d.injuryWeeks || 0;
+    c.finances = d.finances || { spent: 0, owned: { house: null, car: null, team: null } };
     c.user = revive(d.user);
     c.tour = d.tour.map(revive);
     c.field = d.field.map(revive);

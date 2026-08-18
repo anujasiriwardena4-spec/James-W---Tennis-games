@@ -137,6 +137,11 @@ const PTS = {
   atp500:  [ 0,  25, 100, 200,  330,  500]
 };
 
+// winner's cheque per category — the single source both the calendar display
+// and the actual payout in finishEvent() read from
+const PRIZE_BY_CAT = { gs: 3000000, m1000: 1100000, atp500: 500000, finals: 4800000 };
+const PRIZE_DEFAULT = 400000;
+
 const CALENDAR = [
   { id:'ade', week: 1,  name:'Adelaide International', city:'Adelaide',       cat:'atp500', surface:'hard',   draw:32, bestOf:3, mandatory:false },
   { id:'ao',  week: 3,  name:'Australian Open',        city:'Melbourne',      cat:'gs',     surface:'hard',   draw:32, bestOf:5, mandatory:true  },
@@ -164,6 +169,34 @@ const COUNTRIES = ['AUS','USA','GBR','ESP','ITA','FRA','GER','SRB','SUI','ARG','
 const FIRST_NAMES = ['Milo','Kaito','Andre','Luca','Theo','Nikola','Rafa','Aleks','Bruno','Ivan','Emil','Dario','Otto','Rui','Sami','Noel','Enzo','Lars','Vito','Yannis','Kian','Reid','Cody','Marek','Tobias','Elias','Nate','Rowan','Damir','Felipe'];
 const LAST_NAMES  = ['Varga','Okonkwo','Silva','Kovac','Brandt','Ferreira','Ilic','Nowak','Aranda','Petrov','Larsson','Haddad','Moreau','Duarte','Bianchi','Reyes','Kaminski','Vidal','Novak','Ostrowski','Bergman','Delgado','Sato','Ranieri','Chen','Aziz','Halvorsen','Pereira','Marek','Toth'];
 
+/* --- Lifestyle -------------------------------------------------------------
+   What prize money buys off the court. Houses and the coaching team carry a
+   small permanent attribute nudge — the same clamp(40,99) system pre-season
+   training already uses — so a purchase is a real if modest strategic choice,
+   not just a number going up. Cars are pure net-worth flex, no bonus at all.
+   Upgrading within a category sells the old tier back at half price and
+   swaps its bonus out for the new one — you can't stack two houses.
+   ---------------------------------------------------------------------------*/
+const LIFESTYLE_CATALOG = {
+  house: [
+    { id: 'house1', name: 'City Apartment',    price: 500000,   blurb: 'A quiet base between tournaments.', attrBonus: { stamina: 1 } },
+    { id: 'house2', name: 'Riverside House',   price: 2500000,  blurb: 'Room for a proper recovery setup — pool, gym, the works.', attrBonus: { stamina: 3 } },
+    { id: 'house3', name: 'Hilltop Mansion',   price: 8000000,  blurb: 'Nothing left to think about except tennis.', attrBonus: { stamina: 5, mental: 2 } }
+  ],
+  car: [
+    { id: 'car1', name: 'Reliable Sedan', price: 60000,   blurb: 'Gets you to the courts.', attrBonus: {} },
+    { id: 'car2', name: 'Sports Coupe',   price: 250000,  blurb: 'Turns heads in the players’ car park.', attrBonus: {} },
+    { id: 'car3', name: 'Hypercar',       price: 1200000, blurb: 'Entirely unnecessary. That’s the point.', attrBonus: {} }
+  ],
+  team: [
+    { id: 'team1', name: 'Personal Coach',         price: 150000,   blurb: 'Someone in your corner full-time.', attrBonus: { mental: 1 }, trainingBonus: 1 },
+    { id: 'team2', name: 'Coaching Team',          price: 1500000,  blurb: 'Coach, hitting partner and physio on retainer.', attrBonus: { mental: 2, stamina: 1 }, trainingBonus: 2 },
+    { id: 'team3', name: 'Full Performance Staff', price: 6000000,  blurb: 'Coach, physio, nutritionist, sports psychologist. Nothing left to chance.', attrBonus: { mental: 3, stamina: 2 }, trainingBonus: 3 }
+  ]
+};
+const LIFESTYLE_RESALE_PCT = 0.5;
+
 if (typeof module !== 'undefined') {
-  module.exports = { ATTRS, ATTR_KEYS, SURFACES, TOUR_RAW, POOL_RAW, PTS, CALENDAR, ROUND_NAMES_32, COUNTRIES, FIRST_NAMES, LAST_NAMES };
+  module.exports = { ATTRS, ATTR_KEYS, SURFACES, TOUR_RAW, POOL_RAW, PTS, PRIZE_BY_CAT, PRIZE_DEFAULT,
+    CALENDAR, ROUND_NAMES_32, COUNTRIES, FIRST_NAMES, LAST_NAMES, LIFESTYLE_CATALOG, LIFESTYLE_RESALE_PCT };
 }

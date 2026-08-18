@@ -273,6 +273,344 @@ function simMatch(A, B, cfg) {
   };
 }
 
+/* --- doubles --------------------------------------------------------------
+   A separate, simpler model rather than a generalisation of simMatch: real
+   doubles has different dynamics (net presence matters far more, hold rates
+   run much higher) and reusing singles' point/game/tiebreak plumbing with a
+   team lookup would obscure both. Service rotates a fixed A1-B1-A2-B2 order,
+   the convention this keeps to for the whole match. */
+const DOUBLES_BASE_HOLD = { hard: 0.72, clay: 0.69, grass: 0.76, indoor: 0.735 };
+const DOUBLES_INF_SCALE = 0.85;   // a team of two smooths out individual swings a bit
+
+function doublesTeamProfile(team, surface) {
+  const [p1, p2] = team;
+  const a1 = effAttrs(p1), a2 = effAttrs(p2);
+  const netBoost = (server, partner) => partner.net * 0.10;
+  return {
+    serveBy: [
+      weigh(a1, W.serve[surface]) + netBoost(a1, a2),
+      weigh(a2, W.serve[surface]) + netBoost(a2, a1)
+    ],
+    aceBaseBy: [a1.serve, a2.serve],
+    rally: (weigh(a1, W.rally[surface]) + weigh(a2, W.rally[surface])) / 2 + Math.max(a1.net, a2.net) * 0.06,
+    ret: (weigh(a1, W.ret[surface]) + weigh(a2, W.ret[surface])) / 2,
+    mental: (a1.mental + a2.mental) / 2,
+    stamina: (a1.stamina + a2.stamina) / 2
+  };
+}
+
+function doublesServeProb(srv, srvIdx, ret, surface) {
+  const p = DOUBLES_BASE_HOLD[surface]
+    + SERVE_INF[surface] * DOUBLES_INF_SCALE * (srv.serveBy[srvIdx] - TOUR_MEAN)
+    - RET_INF[surface]   * DOUBLES_INF_SCALE * (ret.ret - TOUR_MEAN)
+    + RALLY_INF[surface] * DOUBLES_INF_SCALE * (srv.rally - ret.rally);
+  return clamp(p, 0.50, 0.90);
+}
+
+function simDoublesMatch(teamA, teamB, cfg) {
+  const surface = cfg.surface;
+  const bestOf = cfg.bestOf || 3;
+
+  const ta = doublesTeamProfile(teamA, surface), tb = doublesTeamProfile(teamB, surface);
+  const dayA = jitter(3.0), dayB = jitter(3.0);
+  ['serveBy', 'rally', 'ret'].forEach(k => {
+    if (Array.isArray(ta[k])) ta[k] = ta[k].map(v => v + dayA); else ta[k] += dayA;
+    if (Array.isArray(tb[k])) tb[k] = tb[k].map(v => v + dayB); else tb[k] += dayB;
+  });
+  const clutch = clamp((ta.mental - tb.mental) * 0.0010, -0.03, 0.03);
+
+  const stat = () => ({ aces: 0, df: 0, winners: 0, ue: 0, ptsWon: 0, svPtsWon: 0, svPts: 0 });
+  const st = { A: [stat(), stat()], B: [stat(), stat()] };
+  const sets = [];
+  let setsA = 0, setsB = 0;
+  // fixed rotation across the whole match: A-p1, B-p1, A-p2, B-p2, repeat
+  let rotation = 0;
+  let totalPoints = 0, games = 0;
+
+  function point(big) {
+    const serverTeam = ['A', 'B', 'A', 'B'][rotation % 4];
+    const serverIdx = rotation % 4 < 2 ? 0 : 1;
+    const isA = serverTeam === 'A';
+    const srvProf = isA ? ta : tb, retProf = isA ? tb : ta;
+    let p = doublesServeProb(srvProf, serverIdx, retProf, surface);
+    p += big ? (isA ? clutch : -clutch) : 0;
+    const fatEdge = clamp((isA ? ta.stamina - tb.stamina : tb.stamina - ta.stamina) * 0.00001 * totalPoints, -0.04, 0.04);
+    p = clamp(p + fatEdge, 0.40, 0.92);
+    totalPoints++;
+    const srvStat = st[serverTeam][serverIdx];
+    const retStat = st[isA ? 'B' : 'A'][0];   // return stats bucket into that team's first player, for a simple box score
+    srvStat.svPts++;
+    const won = rnd() < p;
+    if (won) {
+      srvStat.svPtsWon++; srvStat.ptsWon++;
+      const aceP = clamp((srvProf.aceBaseBy[serverIdx] - 68) / 190, 0.02, 0.22) * (surface === 'grass' ? 1.2 : surface === 'clay' ? 0.75 : 1);
+      if (rnd() < aceP) srvStat.aces++; else if (rnd() < 0.30) srvStat.winners++;
+    } else {
+      retStat.ptsWon++;
+      if (rnd() < 0.05) srvStat.df++;
+      else if (rnd() < 0.40) retStat.winners++; else srvStat.ue++;
+    }
+    return { won, isA };
+  }
+
+  function playGame() {
+    let s = 0, r = 0;
+    for (;;) {
+      const bp = (r >= 3 && r >= s);
+      const big = bp || (s >= 3 && s > r) || (s >= 3 && r >= 3);
+      const { won } = point(big);
+      if (won) s++; else r++;
+      if (s >= 4 && s - r >= 2) { games++; rotation++; return true; }
+      if (r >= 4 && r - s >= 2) { games++; rotation++; return false; }
+    }
+  }
+
+  function playTiebreak(target) {
+    let a = 0, b = 0, served = 0;
+    for (;;) {
+      const big = (a >= target - 2 || b >= target - 2);
+      const { won, isA } = point(big);
+      if (isA) { won ? a++ : b++; } else { won ? b++ : a++; }
+      served++;
+      if (served === 1 || served % 2 === 1) rotation++;
+      if (a >= target && a - b >= 2) return { winner: 'A', a, b };
+      if (b >= target && b - a >= 2) return { winner: 'B', a, b };
+    }
+  }
+
+  const setsNeeded = bestOf === 5 ? 3 : 2;
+  while (setsA < setsNeeded && setsB < setsNeeded) {
+    let ga = 0, gb = 0, tb2 = null;
+    const isDecider = (setsA === setsNeeded - 1 && setsB === setsNeeded - 1);
+    for (;;) {
+      if (ga === 6 && gb === 6) {
+        tb2 = playTiebreak(isDecider ? 10 : 7);
+        if (tb2.winner === 'A') ga++; else gb++;
+        break;
+      }
+      const serverIsA = ['A', 'B', 'A', 'B'][rotation % 4] === 'A';
+      const held = playGame();
+      if (serverIsA === held) ga++; else gb++;
+      if (ga >= 6 && ga - gb >= 2) break;
+      if (gb >= 6 && gb - ga >= 2) break;
+    }
+    sets.push({ a: ga, b: gb, tb: tb2 ? { a: tb2.a, b: tb2.b } : null });
+    if (ga > gb) setsA++; else setsB++;
+  }
+
+  const aWon = setsA > setsB;
+  const teamStat = side => ({
+    svPts: st[side][0].svPts + st[side][1].svPts,
+    svPtsWon: st[side][0].svPtsWon + st[side][1].svPtsWon,
+    aces: st[side][0].aces + st[side][1].aces,
+    winners: st[side][0].winners + st[side][1].winners,
+    ue: st[side][0].ue + st[side][1].ue,
+    df: st[side][0].df + st[side][1].df,
+    ptsWon: st[side][0].ptsWon + st[side][1].ptsWon
+  });
+
+  return {
+    teamA, teamB,
+    winnerSide: aWon ? 'A' : 'B',
+    winnerTeam: aWon ? teamA : teamB,
+    loserTeam: aWon ? teamB : teamA,
+    sets,
+    scoreline: sets.map(s => `${s.a}-${s.b}` + (s.tb ? `(${Math.min(s.tb.a, s.tb.b)})` : '')).join(' '),
+    stats: { A: teamStat('A'), B: teamStat('B') },
+    playerStats: st,
+    points: totalPoints,
+    minutes: Math.round(games * 4.1 + totalPoints * 0.22 + 8)
+  };
+}
+
+/* --- play it yourself ------------------------------------------------------
+   Not real-time control — the engine is a point-probability model, not a
+   physics one — but a genuine per-game tactical choice instead of watching
+   the whole match auto-resolve. One side (the human) picks a serve tactic on
+   their service games and a return tactic on their return games; the other
+   side always plays it straight. Serve tactics trade ace rate against
+   double-fault rate (both already tracked stats); return tactics trade a
+   point-probability bump against extra fatigue for that game, since the
+   model has no separate "returner error" stat to hang risk on.
+   ---------------------------------------------------------------------------*/
+const TACTIC = {
+  serve: {
+    power:    { idx: 6,  aceMul: 1.5, dfMul: 1.7, label: 'Go for it',        hint: 'More aces, more double faults' },
+    standard: { idx: 0,  aceMul: 1,   dfMul: 1,   label: 'Standard',         hint: 'The default, no swing either way' },
+    safe:     { idx: -1, aceMul: 0.6, dfMul: 0.4, label: 'Consistent',       hint: 'Fewer aces, far fewer double faults' }
+  },
+  ret: {
+    aggressive: { idx: 6,  fatigue: 1.6, label: 'Attack the return', hint: 'Better odds this game, costs extra energy' },
+    standard:   { idx: 0,  fatigue: 1.0, label: 'Standard',          hint: 'The default, no swing either way' },
+    safe:       { idx: -1, fatigue: 0.6, label: 'Retrieve',          hint: 'Worse odds this game, saves energy' }
+  }
+};
+
+class InteractiveMatch {
+  constructor(A, B, cfg) {
+    this.A = A; this.B = B;
+    this.surface = cfg.surface;
+    this.bestOf = cfg.bestOf || 3;
+    this.finalSetTB = cfg.finalSetTB !== false;
+    this.setsNeeded = this.bestOf === 5 ? 3 : 2;
+
+    this.ia = indices(A, this.surface); this.ib = indices(B, this.surface);
+    let dayA = jitter(3.4), dayB = jitter(3.4);
+    if (rnd() < 0.07) dayA -= 4 + rnd() * 4;
+    if (rnd() < 0.07) dayB -= 4 + rnd() * 4;
+    this.ia.serve += dayA; this.ia.ret += dayA; this.ia.rally += dayA;
+    this.ib.serve += dayB; this.ib.ret += dayB; this.ib.rally += dayB;
+    this.pA = servePointProb(this.ia, this.ib, this.surface);
+    this.pB = servePointProb(this.ib, this.ia, this.surface);
+    this.clutch = clamp((this.ia.mental - this.ib.mental) * 0.0011, -0.035, 0.035);
+
+    this.st = { A: BLANK_STATS(), B: BLANK_STATS() };
+    this.sets = [];
+    this.setsA = 0; this.setsB = 0;
+    this.ga = 0; this.gb = 0;
+    this.server = rnd() < 0.5 ? 'A' : 'B';
+    this.games = 0; this.totalPoints = 0;
+    this.tacticalLoad = 0;   // extra fatigue accrued from return tactics, added on top of the base formula
+    this.over = false; this.winnerSide = null;
+    this.lastGame = null;
+  }
+
+  get isTiebreakNext() { return this.ga === 6 && this.gb === 6; }
+
+  _point(isServerA, big, idxDelta, aceMul, dfMul) {
+    const base = isServerA ? this.pA : this.pB;
+    let p = base + (big ? (isServerA ? this.clutch : -this.clutch) : 0) + (idxDelta || 0) * 0.0032;
+    const fatEdge = clamp((isServerA ? this.ia.stamina - this.ib.stamina : this.ib.stamina - this.ia.stamina) * 0.000012 * this.totalPoints, -0.045, 0.045);
+    p = clamp(p + fatEdge, 0.32, 0.92);
+    this.totalPoints++;
+    const srv = isServerA ? this.st.A : this.st.B, retr = isServerA ? this.st.B : this.st.A;
+    const sIdx = isServerA ? this.ia : this.ib;
+    srv.svPts++; srv.ptsPlayed++; retr.ptsPlayed++;
+    const won = rnd() < p;
+    if (won) {
+      srv.svPtsWon++; srv.ptsWon++;
+      const aceP = clamp((sIdx.aceBase - 68) / 190, 0.02, 0.24) * (this.surface === 'grass' ? 1.25 : this.surface === 'clay' ? 0.7 : 1) * (aceMul || 1);
+      if (rnd() < aceP) srv.aces++; else if (rnd() < 0.34) srv.winners++;
+    } else {
+      retr.ptsWon++;
+      if (rnd() < 0.055 * (dfMul || 1)) srv.df++;
+      else if (rnd() < 0.42) retr.winners++; else srv.ue++;
+    }
+    return won;
+  }
+
+  /* userSide: 'A' or 'B' — whichever side the tactic applies to this game.
+     tacticKey: a key into TACTIC.serve or TACTIC.ret, whichever role userSide
+     has this game; ignored (treated as 'standard') if it's the wrong role. */
+  playGame(userSide, tacticKey) {
+    if (this.over) return null;
+    const serverIsA = this.server === 'A';
+    const userIsServing = (userSide === 'A') === serverIsA;
+    const t = userIsServing ? (TACTIC.serve[tacticKey] || TACTIC.serve.standard)
+                             : (TACTIC.ret[tacticKey] || TACTIC.ret.standard);
+    const idxDelta = userIsServing ? t.idx : 0;
+    const retIdxDelta = userIsServing ? 0 : t.idx;
+    // the returner's idx delta needs a sign flip: it helps the RETURNER win
+    // the point, i.e. hurts the server's hold chance
+    const netDelta = idxDelta - retIdxDelta;
+
+    let s = 0, r = 0;
+    const srvStats = serverIsA ? this.st.A : this.st.B, retStats = serverIsA ? this.st.B : this.st.A;
+    for (;;) {
+      const bp = (r >= 3 && r >= s);
+      const big = bp || (s >= 3 && s > r) || (s >= 3 && r >= 3);
+      if (bp) srvStats.bpFaced++;
+      const won = this._point(serverIsA, big, netDelta, userIsServing ? t.aceMul : 1, userIsServing ? t.dfMul : 1);
+      if (won) s++; else r++;
+      if (bp && !won) retStats.bpWon++;
+      if (s >= 4 && s - r >= 2) { return this._closeGame(true, userIsServing, t); }
+      if (r >= 4 && r - s >= 2) { return this._closeGame(false, userIsServing, t); }
+    }
+  }
+
+  _closeGame(serverHeld, userIsServing, t) {
+    this.games++;
+    const serverIsA = this.server === 'A';
+    const wonByA = serverIsA ? serverHeld : !serverHeld;
+    if (wonByA) this.ga++; else this.gb++;
+    if (!userIsServing) this.tacticalLoad += (t.fatigue - 1) * 1.6;
+    this.lastGame = { server: this.server, held: serverHeld };
+    this.server = serverIsA ? 'B' : 'A';
+    this._checkSetOver();
+    return this.lastGame;
+  }
+
+  playTiebreak(userSide, tacticKey) {
+    if (this.over) return null;
+    const target = (this._isDecider() && this.finalSetTB) ? 10 : 7;
+    let a = 0, b = 0, served = 0;
+    let srvA = this.server === 'A';
+    for (;;) {
+      const isServerA = srvA;
+      const userIsServing = (userSide === 'A') === isServerA;
+      const t = userIsServing ? (TACTIC.serve[tacticKey] || TACTIC.serve.standard)
+                               : (TACTIC.ret[tacticKey] || TACTIC.ret.standard);
+      const netDelta = userIsServing ? t.idx : -t.idx;
+      const big = (a >= target - 2 || b >= target - 2);
+      const won = this._point(isServerA, big, netDelta, userIsServing ? t.aceMul : 1, userIsServing ? t.dfMul : 1);
+      if (isServerA) { won ? a++ : b++; } else { won ? b++ : a++; }
+      served++;
+      if (served === 1 || served % 2 === 1) srvA = !srvA;
+      if (!userIsServing) this.tacticalLoad += (t.fatigue - 1) * 0.3;
+      if ((a >= target && a - b >= 2) || (b >= target && b - a >= 2)) {
+        const winner = a > b ? 'A' : 'B';
+        if (winner === 'A') this.ga++; else this.gb++;
+        this.server = (this.server === 'A') ? 'B' : 'A';
+        this.sets.push({ a: this.ga, b: this.gb, tb: { a, b } });
+        if (this.ga > this.gb) this.setsA++; else this.setsB++;
+        this.ga = 0; this.gb = 0;
+        this._checkMatchOver();
+        return { tiebreak: true, a, b, winner };
+      }
+    }
+  }
+
+  _isDecider() { return this.setsA === this.setsNeeded - 1 && this.setsB === this.setsNeeded - 1; }
+
+  _checkSetOver() {
+    if (this.ga >= 6 && this.ga - this.gb >= 2) { this._finishSet(); return; }
+    if (this.gb >= 6 && this.gb - this.ga >= 2) { this._finishSet(); return; }
+  }
+  _finishSet() {
+    this.sets.push({ a: this.ga, b: this.gb, tb: null });
+    if (this.ga > this.gb) this.setsA++; else this.setsB++;
+    this.ga = 0; this.gb = 0;
+    this._checkMatchOver();
+  }
+  _checkMatchOver() {
+    if (this.setsA >= this.setsNeeded || this.setsB >= this.setsNeeded) {
+      this.over = true;
+      this.winnerSide = this.setsA > this.setsB ? 'A' : 'B';
+    }
+  }
+
+  result() {
+    const aWon = this.winnerSide === 'A';
+    const load = (this.games * 0.9 + this.totalPoints * 0.035 + (this.bestOf === 5 ? 6 : 0)) * 0.45 + Math.max(0, this.tacticalLoad);
+    const fatigueA = load * (1 - (this.ia.stamina - 70) / 260);
+    const fatigueB = load * (1 - (this.ib.stamina - 70) / 260);
+    const A = this.A, B = this.B;
+    return {
+      winner: aWon ? A : B, loser: aWon ? B : A, winnerId: aWon ? A.id : B.id,
+      sets: this.sets,
+      scoreline: this.sets.map(s => `${s.a}-${s.b}` + (s.tb ? `(${Math.min(s.tb.a, s.tb.b)})` : '')).join(' '),
+      scorelineFor(id) {
+        const flip = (id === B.id);
+        return this.sets.map(s => (flip ? `${s.b}-${s.a}` : `${s.a}-${s.b}`) + (s.tb ? `(${Math.min(s.tb.a, s.tb.b)})` : '')).join(' ');
+      },
+      stats: this.st,
+      fatigue: { [A.id]: fatigueA, [B.id]: fatigueB },
+      points: this.totalPoints,
+      minutes: Math.round(this.games * 4.1 + this.totalPoints * 0.22 + 8)
+    };
+  }
+}
+
 /* --- draws --------------------------------------------------------------- */
 function seedOrder(n) {
   let arr = [1];
@@ -320,14 +658,18 @@ class Tournament {
     if (left === 3) return 'Quarter-final';
     return 'Round of ' + Math.pow(2, left);
   }
-  playRound() {
+  // overrideResult: { playerId, res } — swaps in an already-resolved result
+  // (e.g. from an InteractiveMatch the user just played by hand) for whichever
+  // pairing involves that player, instead of calling simMatch for it. Every
+  // other pairing in the round resolves exactly as before.
+  playRound(overrideResult) {
     if (this.champion) return null;
     const ms = [];
     for (let i = 0; i < this.alive.length; i += 2) {
       const a = this.alive[i], b = this.alive[i + 1];
-      const res = simMatch(a, b, {
-        surface: this.ev.surface, bestOf: this.ev.bestOf, finalSetTB: true
-      });
+      const res = (overrideResult && (a.id === overrideResult.playerId || b.id === overrideResult.playerId))
+        ? overrideResult.res
+        : simMatch(a, b, { surface: this.ev.surface, bestOf: this.ev.bestOf, finalSetTB: true });
       ms.push({ a, b, res, round: this.roundName(this.roundIndex) });
     }
     this.rounds.push(ms);
@@ -458,6 +800,7 @@ function overall(p) {
 
 if (typeof module !== 'undefined') {
   module.exports = { mulberry32, setSeed, rnd, rndInt, pick, shuffle, clamp, jitter, makePlayer,
-    buildTour, buildJourneymen, indices, servePointProb, simMatch, seedOrder, buildDraw,
-    Tournament, simTourFinals, rankingPoints, rankAll, orderByPoints, racePoints, passWeeks, ageOne, overall, effAttrs };
+    buildTour, buildJourneymen, indices, servePointProb, simMatch, simDoublesMatch, seedOrder, buildDraw,
+    Tournament, simTourFinals, rankingPoints, rankAll, orderByPoints, racePoints, passWeeks, ageOne, overall, effAttrs,
+    InteractiveMatch, TACTIC };
 }

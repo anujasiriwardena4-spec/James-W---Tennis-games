@@ -207,8 +207,10 @@ button,input,select{font:inherit;color:inherit}
 }
 .hh-name{font-size:30px;text-transform:uppercase;line-height:1}
 .hh-sub{color:var(--dim);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
-.hh-retire{padding:5px 12px;font-size:12px;margin-top:10px;color:var(--dim)}
+.hh-btnrow{display:flex;gap:8px;margin-top:10px}
+.hh-retire,.hh-lifestyle{padding:5px 12px;font-size:12px;color:var(--dim)}
 .hh-retire:hover{color:var(--bad);border-color:var(--bad)}
+.hh-lifestyle:hover{color:var(--acc);border-color:var(--acc)}
 .hh-stats{display:flex;gap:22px;margin-left:auto;flex-wrap:wrap}
 .hh-stat{text-align:center;min-width:64px}
 .hh-stat b{display:block;font-family:var(--font-cond);font-size:28px;line-height:1}
@@ -230,6 +232,7 @@ button,input,select{font:inherit;color:inherit}
 .cal-wk{font-family:var(--font-cond);font-size:13px;color:var(--dim);letter-spacing:.08em}
 .cal-name{font-weight:600}
 .cal-sub{display:flex;align-items:center;gap:8px;color:var(--dim);font-size:12px;margin-top:3px;flex-wrap:wrap}
+.cal-prize{color:var(--acc);font-weight:600}
 .cal-res{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
 .cal-res b{color:var(--acc);font-family:var(--font-cond);font-size:19px;display:block}
 .cal-res.win b{color:var(--acc)}
@@ -278,7 +281,22 @@ button,input,select{font:inherit;color:inherit}
 .set-box .sg sup{font-size:12px;color:var(--dim)}
 .set-box .sl{font-size:9px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;margin-top:2px}
 .set-box.won .sg{color:var(--acc)}
+.set-box.live{border-color:rgba(212,255,63,.4);background:linear-gradient(180deg,rgba(212,255,63,.08),var(--bg-2))}
 .serving{color:var(--acc)}
+
+/* ---------- play it yourself ---------- */
+.tactic-panel{margin-top:8px;padding-top:18px;border-top:1px solid var(--line-soft);text-align:center}
+.tactic-lead{color:var(--muted);font-size:14px;margin-bottom:14px}
+.tactic-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:620px;margin:0 auto}
+.tactic-btn{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:12px;
+  padding:14px 10px;cursor:pointer;text-align:center;display:flex;flex-direction:column;gap:5px;
+  transition:.15s;
+}
+.tactic-btn:hover{border-color:var(--acc);background:#1b2a36;transform:translateY(-2px)}
+.tb-label{font-family:var(--font-cond);font-size:18px;text-transform:uppercase;color:var(--txt)}
+.tb-hint{font-size:11px;color:var(--dim);line-height:1.4}
+#btn-sim-rest-interactive{margin-top:16px}
 .match-result{text-align:center;font-family:var(--font-cond);font-size:26px;text-transform:uppercase;letter-spacing:.06em;margin:8px 0}
 .match-result.win{color:var(--acc)}
 .match-result.loss{color:var(--bad)}
@@ -345,6 +363,55 @@ button,input,select{font:inherit;color:inherit}
 .btn-danger{background:transparent;border-color:rgba(248,113,113,.4);color:var(--bad)}
 .btn-danger:hover{background:rgba(248,113,113,.12);border-color:var(--bad)}
 
+/* ---------- local 2v2 ---------- */
+.doubles-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:start;margin:20px 0}
+.doubles-team{display:flex;flex-direction:column;gap:12px}
+.doubles-team-name{font-size:14px;letter-spacing:.16em;text-transform:uppercase;text-align:center;padding-bottom:4px}
+.doubles-team-name.team-a{color:var(--acc)}
+.doubles-team-name.team-b{color:var(--hard)}
+.doubles-vs{align-self:center;font-family:var(--font-cond);color:var(--dim);font-size:20px;letter-spacing:.2em;padding-top:30px}
+.doubles-slot{
+  min-height:104px;background:var(--bg-2);border:1px dashed var(--line);border-radius:var(--r);
+  padding:16px;display:flex;flex-direction:column;justify-content:center;gap:10px;
+}
+.doubles-slot.filled{border-style:solid;border-color:rgba(212,255,63,.3)}
+.dslot-empty{display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
+.dslot-empty p{color:var(--dim);font-size:12px}
+.dslot-name-input{
+  background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 11px;
+  width:100%;text-align:center;font-size:13px;
+}
+.dslot-name-input:focus{outline:2px solid var(--acc-dark);outline-offset:1px}
+.dslot-empty .dslot-btns{display:flex;gap:8px}
+.dslot-card{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.dslot-card-info{min-width:0}
+.dslot-card-name{font-family:var(--font-cond);font-size:20px;text-transform:uppercase;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dslot-card-meta{color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.dslot-card-ovr{font-family:var(--font-cond);font-size:28px;color:var(--acc);flex:none}
+.dslot-clear{flex:none;width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--dim);cursor:pointer;font-weight:700}
+.dslot-clear:hover{color:var(--bad);border-color:var(--bad)}
+.doubles-options{margin:18px 0 4px}
+.doubles-scoreboard{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;margin-bottom:20px}
+.dteam-box{text-align:center}
+.dteam-box .dt-names{font-family:var(--font-cond);font-size:clamp(18px,3vw,26px);text-transform:uppercase;line-height:1.15}
+.dteam-box .dt-sub{color:var(--dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+.dteam-box.dwin .dt-names{color:var(--acc)}
+
+/* ---------- lifestyle shop ---------- */
+.shop-section{margin-top:26px}
+.shop-section-title{font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.shop-card{
+  background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px;display:flex;flex-direction:column;gap:8px;
+}
+.shop-card.owned{border-color:rgba(212,255,63,.35);background:linear-gradient(180deg,rgba(212,255,63,.06),var(--bg-2))}
+.shop-card-name{font-family:var(--font-cond);font-size:20px;text-transform:uppercase;line-height:1.1}
+.shop-card-blurb{color:var(--muted);font-size:13px;line-height:1.5;flex:1}
+.shop-card-perk{color:var(--acc);font-size:12px;font-weight:600}
+.shop-card .btn{margin-top:4px}
+.shop-card .btn:disabled{opacity:.4}
+
 /* ---------- modal ---------- */
 .modal-backdrop{
   position:fixed;inset:0;background:rgba(3,6,9,.72);backdrop-filter:blur(2px);
@@ -395,4 +462,9 @@ button,input,select{font:inherit;color:inherit}
   .screen-title{font-size:26px}
   .bar-row{grid-template-columns:72px 1fr 30px}
   .bar-from{padding-left:72px}
+  .doubles-teams{grid-template-columns:1fr}
+  .doubles-vs{padding-top:0}
+  .dslot-btns{flex-direction:column}
+  .shop-grid{grid-template-columns:1fr}
+  .tactic-choices{grid-template-columns:1fr}
 }
