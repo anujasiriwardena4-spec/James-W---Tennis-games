@@ -172,14 +172,19 @@ class Career {
       main = orderByPoints(pool.slice(0, size - 1).concat([this.user]), CALENDAR);
       userInMain = true;
     } else {
-      // qualifying: a 4-player mini-draw for the last main-draw seat, against
-      // players around your own ranking rather than the ones who just missed a seed
+      // qualifying: a 4-player mini-draw for the last main-draw seat. Two
+      // rivals come from around your own ranking; the third is deliberately
+      // dangerous — a genuine tour-level name in the qualifying draw, same
+      // as real tennis, so a strong build can't just walk through journeymen.
       const myPts = rankingPoints(this.user, CALENDAR);
       let idx = pool.findIndex(p => rankingPoints(p, CALENDAR) <= myPts);
       if (idx < 0) idx = pool.length;
       const from = clamp(idx - 8, size - 1, Math.max(size - 1, pool.length - 16));
       const near = pool.slice(from, from + 16);
-      const rivals = shuffle(near).slice(0, 3);
+      const rivals = shuffle(near).slice(0, 2);
+      const dangerPool = pool.slice(0, Math.max(size - 1, Math.floor(pool.length / 2)))
+        .filter(p => !rivals.includes(p));
+      if (dangerPool.length) rivals.push(pick(dangerPool));
       let back = pool.length - 1;
       while (rivals.length < 3 && back >= 0) { if (!rivals.includes(pool[back])) rivals.push(pool[back]); back--; }
       qual = new Tournament({ ...ev, draw: 4, bestOf: 3, cat: 'qual' },
@@ -245,7 +250,10 @@ class Career {
     const userMatch = ms.find(m => m.a.isUser || m.b.isUser) || null;
     const userThrough = userMatch ? userMatch.res.winnerId === this.user.id : false;
     c.roundIdx = c.main.roundIndex;
-    if (userMatch && !userThrough) this.checkInjury();
+    // overuse risk doesn't care whether you won the point — check every
+    // match played, not just losses, or a dominant player who rarely loses
+    // also never faces the downside of entering every single event
+    if (userMatch) this.checkInjury();
     if (c.main.champion) this.finishEvent();
     return { phase: 'main', matches: ms, userMatch, userThrough, eventDone: !!c.main.champion };
   }
@@ -283,7 +291,7 @@ class Career {
 
   checkInjury() {
     const u = this.user;
-    const risk = Math.max(0, (u.fatigue - 55) / 100) * 0.20 + (u.age > 31 ? 0.012 : 0.004);
+    const risk = Math.max(0, (u.fatigue - 40) / 100) * 0.22 + (u.age > 31 ? 0.012 : 0.004);
     if (rnd() < risk) {
       this.injuryWeeks = 2 + rndInt(5);
       const kinds = ['a wrist strain', 'an abdominal tear', 'a rolled ankle', 'a hip flexor problem', 'a back spasm', 'shoulder soreness'];

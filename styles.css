@@ -111,6 +111,7 @@ button,input,select{font:inherit;color:inherit}
 .rule h3{font-size:20px;margin-bottom:8px;text-transform:uppercase}
 .rule p{color:var(--muted);font-size:14px}
 .footnote{color:var(--dim);font-size:12px;margin-top:34px}
+.ad-slot{margin:24px auto 0;max-width:728px;min-height:90px}
 
 /* ---------- forms ---------- */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}

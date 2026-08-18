@@ -14,9 +14,14 @@ const js = ['js/data.js', 'js/engine.js', 'js/game.js', 'js/ui.js'].map(f => {
   return (cut >= 0 ? s.slice(0, cut) : s).trimEnd();
 }).join('\n\n');
 
-const head = html.slice(html.indexOf('<head>') + 6, html.indexOf('</head>'))
+// Ad markup only works on the real deployed site — the Claude Artifact
+// preview's sandboxed CSP blocks every ad host outright, so it's stripped
+// here rather than shipped as dead, always-failing script tags.
+const stripAds = s => s.replace(/\s*<!-- ad:start -->[\s\S]*?<!-- ad:end -->/g, '');
+
+const head = stripAds(html.slice(html.indexOf('<head>') + 6, html.indexOf('</head>')))
   .replace(/\s*<link rel="stylesheet" href="styles\.css">/, '').trim();
-const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('</body>'))
+const body = stripAds(html.slice(html.indexOf('<body>') + 6, html.indexOf('</body>')))
   .replace(/\s*<script src="js\/[a-z]+\.js"><\/script>/g, '').trim();
 
 const page = '<!doctype html>\n<html lang="en">\n<head>\n' + head +
