@@ -57,14 +57,21 @@ if (Career.hasSave()) $('#btn-continue').hidden = false;
   }));
 })();
 
+function resetBuilder() {
+  builder = new Builder(POOL_RAW, ATTR_KEYS);
+  renderBuilder();
+  $('#spin-card').hidden = true; $('#spin-empty').hidden = false;
+  $('#btn-spin').disabled = false; $('#btn-spin').textContent = 'Spin';
+  $('#spin-empty').querySelector('p').textContent = 'Eight slots. Eight different players. Pick the skill you want off each one.';
+}
+
 $('#btn-to-builder').addEventListener('click', () => {
   identity.name    = ($('#in-name').value || '').trim() || 'Your Player';
   identity.country = $('#in-country').value;
   identity.age     = parseInt($('#in-age').value, 10);
   identity.hand    = $('.seg-btn.active', $('#seg-hand')).dataset.v;
   identity.bh      = parseInt($('.seg-btn.active', $('#seg-bh')).dataset.v, 10);
-  builder = new Builder(POOL_RAW, ATTR_KEYS);
-  renderBuilder();
+  resetBuilder();
   show('screen-builder');
 });
 
@@ -195,11 +202,7 @@ function revealPlayer() {
   requestAnimationFrame(() => $$('.bar-fill').forEach(b => { const w = b.style.width; b.style.width = '0'; requestAnimationFrame(() => b.style.width = w); }));
 }
 $('#btn-rebuild').addEventListener('click', () => {
-  builder = new Builder(POOL_RAW, ATTR_KEYS);
-  renderBuilder();
-  $('#spin-card').hidden = true; $('#spin-empty').hidden = false;
-  $('#btn-spin').disabled = false; $('#btn-spin').textContent = 'Spin';
-  $('#spin-empty').querySelector('p').textContent = 'Eight slots. Eight different players. Pick the skill you want off each one.';
+  resetBuilder();
   show('screen-builder');
 });
 $('#btn-start-career').addEventListener('click', () => {
@@ -217,6 +220,7 @@ function renderHub() {
     <div>
       <div class="hh-name">${esc(u.name)}</div>
       <div class="hh-sub">${u.country} · ${u.age} yrs · OVR ${ovr} · ${career.year} season</div>
+      <button class="btn btn-ghost hh-retire" id="btn-retire-now">Retire</button>
     </div>
     <div class="hh-stats">
       <div class="hh-stat"><b>${u.rank}</b><span>Rank</span></div>
@@ -246,6 +250,47 @@ function renderHub() {
   renderRankings();
   $('#news-list').innerHTML = career.messages.slice(0, 14)
     .map(m => `<li class="${m.kind}">${esc(m.msg)}</li>`).join('') || '<li>Season not started.</li>';
+  $('#btn-retire-now').addEventListener('click', doRetire);
+}
+
+/* ---------- retirement ---------------------------------------------------- */
+function doRetire() {
+  if (!confirm(`Retire ${career.user.name}? This ends the career for good — there's no undo.`)) return;
+  const summary = career.retire();
+  renderRetirement(summary);
+  show('screen-retirement');
+}
+
+function renderRetirement(s) {
+  const rows = [
+    ['Seasons played', s.seasons],
+    ['Career record', `${s.w}-${s.l} (${Math.round(s.winPct * 100)}%)`],
+    ['Titles', s.titles],
+    ['Grand Slams', s.slams],
+    ['Masters 1000s', s.masters],
+    ['Tour Finals', s.finals],
+    ['Weeks at world No. 1', s.weeksNo1],
+    ['Best ranking', '#' + s.bestRank],
+    ['Career prize money', '$' + (s.prize / 1e6).toFixed(1) + 'm']
+  ];
+  $('#retirement-body').innerHTML = `
+    <div class="retire-hero">
+      <div class="retire-name">${esc(s.name)} · retired at ${s.age}</div>
+      <div class="retire-tier">${esc(s.tier.label)}</div>
+      <p class="retire-blurb">${esc(s.tier.blurb)}</p>
+    </div>
+    <table class="season-table"><tbody>${rows.map(([k, v]) =>
+      `<tr><td>${k}</td><td style="text-align:right;font-family:var(--font-cond);font-size:18px">${v}</td></tr>`
+    ).join('')}</tbody></table>
+    ${s.honours.length ? `<h3 style="margin:26px 0 6px;font-size:20px;text-transform:uppercase;letter-spacing:.06em">Honours</h3>
+      <ul class="honours">${s.honours.map(h => `<li>${h.year} · ${esc(h.text)}</li>`).join('')}</ul>` : ''}
+    <div class="retire-actions"><button class="btn btn-primary btn-lg" id="btn-new-after-retire">Build a new player</button></div>`;
+  $('#btn-new-after-retire').addEventListener('click', () => {
+    career = null;
+    $('#btn-continue').hidden = true;
+    show('screen-identity');
+    $('#in-name').focus();
+  });
 }
 
 function renderCalendar() {
@@ -564,6 +609,7 @@ function renderOffseason() {
       <h2 class="screen-title">Pre-season</h2>
       <p style="color:var(--muted);margin-bottom:6px">Winter block. You have <strong style="color:var(--acc)">${budget - used}</strong> of ${budget} training points left.
       Age also moves your numbers on its own — ${u.age} going on ${u.age + 1}.</p>
+      ${u.age >= 34 ? `<p style="color:var(--dim);font-size:13px;margin-top:6px">The legs go first at this age. Plenty of players your age are already thinking about what comes after.</p>` : ''}
       <div style="margin-top:18px">${ATTRS.map(a => {
         const v = u.attrs[a.key], nv = v + spend[a.key];
         return `<div class="train-row">
@@ -576,9 +622,13 @@ function renderOffseason() {
           </span>
         </div>`;
       }).join('')}</div>
-      <div class="row-end"><button class="btn btn-primary btn-lg" id="btn-next-season">Start ${career.year + 1}</button></div>`;
+      <div class="row-end">
+        <button class="btn btn-ghost" id="btn-retire-offseason">Retire instead</button>
+        <button class="btn btn-primary btn-lg" id="btn-next-season">Start ${career.year + 1}</button>
+      </div>`;
     $$('[data-inc]').forEach(b => b.addEventListener('click', () => { spend[b.dataset.inc]++; draw(); }));
     $$('[data-dec]').forEach(b => b.addEventListener('click', () => { spend[b.dataset.dec]--; draw(); }));
+    $('#btn-retire-offseason').addEventListener('click', doRetire);
     $('#btn-next-season').addEventListener('click', () => {
       career.newSeason(spend);
       career.say(`${career.year} season begins.`, 'info');

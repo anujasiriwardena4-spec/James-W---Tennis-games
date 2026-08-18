@@ -206,6 +206,8 @@ button,input,select{font:inherit;color:inherit}
 }
 .hh-name{font-size:30px;text-transform:uppercase;line-height:1}
 .hh-sub{color:var(--dim);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.hh-retire{padding:5px 12px;font-size:12px;margin-top:10px;color:var(--dim)}
+.hh-retire:hover{color:var(--bad);border-color:var(--bad)}
 .hh-stats{display:flex;gap:22px;margin-left:auto;flex-wrap:wrap}
 .hh-stat{text-align:center;min-width:64px}
 .hh-stat b{display:block;font-family:var(--font-cond);font-size:28px;line-height:1}
@@ -318,6 +320,13 @@ button,input,select{font:inherit;color:inherit}
 .tbtn:disabled{opacity:.3;cursor:not-allowed}
 .honours{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .honours li{font-size:12px;background:rgba(212,255,63,.1);color:var(--acc);border:1px solid rgba(212,255,63,.25);padding:4px 10px;border-radius:999px}
+
+/* ---------- retirement ---------- */
+.retire-hero{text-align:center;padding:8px 0 26px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.retire-name{color:var(--dim);font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+.retire-tier{font-family:var(--font-cond);font-size:clamp(34px,7vw,56px);text-transform:uppercase;line-height:1.02;color:var(--acc);text-wrap:balance}
+.retire-blurb{color:var(--muted);max-width:52ch;margin:14px auto 0;font-size:15px;line-height:1.6}
+.retire-actions{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
 
 /* ---------- toasts ---------- */
 .toast-wrap{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;pointer-events:none}

@@ -218,6 +218,8 @@ button,input,select{font:inherit;color:inherit}
 }
 .hh-name{font-size:30px;text-transform:uppercase;line-height:1}
 .hh-sub{color:var(--dim);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.hh-retire{padding:5px 12px;font-size:12px;margin-top:10px;color:var(--dim)}
+.hh-retire:hover{color:var(--bad);border-color:var(--bad)}
 .hh-stats{display:flex;gap:22px;margin-left:auto;flex-wrap:wrap}
 .hh-stat{text-align:center;min-width:64px}
 .hh-stat b{display:block;font-family:var(--font-cond);font-size:28px;line-height:1}
@@ -330,6 +332,13 @@ button,input,select{font:inherit;color:inherit}
 .tbtn:disabled{opacity:.3;cursor:not-allowed}
 .honours{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .honours li{font-size:12px;background:rgba(212,255,63,.1);color:var(--acc);border:1px solid rgba(212,255,63,.25);padding:4px 10px;border-radius:999px}
+
+/* ---------- retirement ---------- */
+.retire-hero{text-align:center;padding:8px 0 26px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.retire-name{color:var(--dim);font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+.retire-tier{font-family:var(--font-cond);font-size:clamp(34px,7vw,56px);text-transform:uppercase;line-height:1.02;color:var(--acc);text-wrap:balance}
+.retire-blurb{color:var(--muted);max-width:52ch;margin:14px auto 0;font-size:15px;line-height:1.6}
+.retire-actions{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
 
 /* ---------- toasts ---------- */
 .toast-wrap{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;pointer-events:none}
@@ -553,6 +562,11 @@ button,input,select{font:inherit;color:inherit}
   <!-- ================= OFF SEASON ================= -->
   <section class="screen" id="screen-offseason">
     <div class="panel narrow" id="offseason-body"></div>
+  </section>
+
+  <!-- ================= RETIREMENT ================= -->
+  <section class="screen" id="screen-retirement">
+    <div class="panel narrow" id="retirement-body"></div>
   </section>
 
 </div>
@@ -1234,12 +1248,48 @@ class Builder {
   }
 }
 
+/* --- legacy verdict, checked top-down at retirement ----------------------- */
+function legacyTier(c, seasons) {
+  if (c.slams >= 8 && c.weeksNo1 >= 150) return {
+    label: 'GOAT Territory',
+    blurb: `${c.slams} Grand Slams and ${Math.round(c.weeksNo1 / 52)}+ years at world No. 1 — this is a career people build eras around.`
+  };
+  if (c.slams >= 3 || (c.titles >= 15 && c.masters >= 5)) return {
+    label: 'Hall of Famer',
+    blurb: `A genuine great of the game: ${c.slams} Grand Slam${c.slams === 1 ? '' : 's'}, ${c.masters} Masters 1000 title${c.masters === 1 ? '' : 's'}, a career that gets remembered.`
+  };
+  if (c.slams >= 1) return {
+    label: 'Grand Slam Champion',
+    blurb: `You won a major. Whatever else this career was, that line never gets erased.`
+  };
+  if (c.masters >= 3) return {
+    label: 'Masters Champion',
+    blurb: `No Slam, but ${c.masters} Masters 1000 titles is a career most tour pros never get close to.`
+  };
+  if (c.titles >= 1) return {
+    label: 'Tour Winner',
+    blurb: `${c.titles} ATP title${c.titles === 1 ? '' : 's'} on the board. You made a living beating some of the best players alive.`
+  };
+  if (c.bestRank <= 100) return {
+    label: 'Tour Professional',
+    blurb: `You cracked the top ${c.bestRank <= 50 ? '50' : '100'} across ${seasons} season${seasons === 1 ? '' : 's'} on tour. Most people who pick up a racquet never get within a mile of that.`
+  };
+  return {
+    label: 'Journeyman',
+    blurb: seasons === 0
+      ? `The tour is brutal, and it doesn't wait for anyone. You called it before your first season even finished.`
+      : `The tour is brutal, and it doesn't wait for anyone. ${seasons} season${seasons === 1 ? '' : 's'} on the road is still a full career.`
+  };
+}
+
 /* --- career -------------------------------------------------------------- */
 class Career {
   constructor(opts) {
     this.seed = opts.seed || (Date.now() % 2147483647);
     setSeed(this.seed);
     this.year = opts.year || 2026;
+    this.startYear = this.year;
+    this.seasonsCompleted = 0;
     this.eventIndex = 0;
     this.week = 0;
     this.messages = [];
@@ -1472,6 +1522,7 @@ class Career {
   get seasonOver() { return this.eventIndex >= CALENDAR.length; }
 
   endSeason() {
+    this.seasonsCompleted++;
     const table = rankAll(this.players, CALENDAR);
     const no1 = table[0].p;
     no1.career.weeksNo1 += 52;
@@ -1518,6 +1569,27 @@ class Career {
     return a <= 23 ? 6 : a <= 26 ? 5 : a <= 29 ? 4 : 3;
   }
 
+  /* --- retirement: the actual end of the game ----------------------------
+     There's no forced cutoff — attributes just keep declining with age — but
+     the player can call time whenever they want. This is where the run gets
+     judged and turned into a verdict, then the save is cleared: a retired
+     career is over, the only way forward is building someone new. */
+  retire() {
+    const u = this.user;
+    const c = u.career;
+    const winPct = (c.w + c.l) > 0 ? c.w / (c.w + c.l) : 0;
+    const summary = {
+      name: u.name, country: u.country, age: u.age,
+      seasons: this.seasonsCompleted, w: c.w, l: c.l, winPct,
+      titles: c.titles, slams: c.slams, masters: c.masters, finals: c.finals,
+      weeksNo1: c.weeksNo1, bestRank: c.bestRank, prize: c.prize,
+      honours: this.honours.slice(),
+      tier: legacyTier(c, this.seasonsCompleted)
+    };
+    Career.clear();
+    return summary;
+  }
+
   /* --- save/load --------------------------------------------------------- */
   toJSON() {
     const slim = p => ({
@@ -1526,7 +1598,8 @@ class Career {
       res: p.res, prev: p.prev, career: p.career, season: p.season
     });
     return {
-      v: 1, seed: this.seed, year: this.year, eventIndex: this.eventIndex, week: this.week,
+      v: 1, seed: this.seed, year: this.year, startYear: this.startYear,
+      seasonsCompleted: this.seasonsCompleted, eventIndex: this.eventIndex, week: this.week,
       messages: this.messages, seasonLog: this.seasonLog, honours: this.honours,
       entries: this.entries, injuryWeeks: this.injuryWeeks,
       user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim)
@@ -1550,7 +1623,8 @@ class Career {
     };
     const c = Object.create(Career.prototype);
     c.seed = d.seed; setSeed(d.seed + d.eventIndex * 977 + d.year);
-    c.year = d.year; c.eventIndex = d.eventIndex; c.week = d.week;
+    c.year = d.year; c.startYear = d.startYear || d.year; c.seasonsCompleted = d.seasonsCompleted || 0;
+    c.eventIndex = d.eventIndex; c.week = d.week;
     c.messages = d.messages || []; c.seasonLog = d.seasonLog || []; c.honours = d.honours || [];
     c.entries = d.entries || {}; c.injuryWeeks = d.injuryWeeks || 0;
     c.user = revive(d.user);
@@ -1622,14 +1696,21 @@ if (Career.hasSave()) $('#btn-continue').hidden = false;
   }));
 })();
 
+function resetBuilder() {
+  builder = new Builder(POOL_RAW, ATTR_KEYS);
+  renderBuilder();
+  $('#spin-card').hidden = true; $('#spin-empty').hidden = false;
+  $('#btn-spin').disabled = false; $('#btn-spin').textContent = 'Spin';
+  $('#spin-empty').querySelector('p').textContent = 'Eight slots. Eight different players. Pick the skill you want off each one.';
+}
+
 $('#btn-to-builder').addEventListener('click', () => {
   identity.name    = ($('#in-name').value || '').trim() || 'Your Player';
   identity.country = $('#in-country').value;
   identity.age     = parseInt($('#in-age').value, 10);
   identity.hand    = $('.seg-btn.active', $('#seg-hand')).dataset.v;
   identity.bh      = parseInt($('.seg-btn.active', $('#seg-bh')).dataset.v, 10);
-  builder = new Builder(POOL_RAW, ATTR_KEYS);
-  renderBuilder();
+  resetBuilder();
   show('screen-builder');
 });
 
@@ -1760,11 +1841,7 @@ function revealPlayer() {
   requestAnimationFrame(() => $$('.bar-fill').forEach(b => { const w = b.style.width; b.style.width = '0'; requestAnimationFrame(() => b.style.width = w); }));
 }
 $('#btn-rebuild').addEventListener('click', () => {
-  builder = new Builder(POOL_RAW, ATTR_KEYS);
-  renderBuilder();
-  $('#spin-card').hidden = true; $('#spin-empty').hidden = false;
-  $('#btn-spin').disabled = false; $('#btn-spin').textContent = 'Spin';
-  $('#spin-empty').querySelector('p').textContent = 'Eight slots. Eight different players. Pick the skill you want off each one.';
+  resetBuilder();
   show('screen-builder');
 });
 $('#btn-start-career').addEventListener('click', () => {
@@ -1782,6 +1859,7 @@ function renderHub() {
     <div>
       <div class="hh-name">${esc(u.name)}</div>
       <div class="hh-sub">${u.country} · ${u.age} yrs · OVR ${ovr} · ${career.year} season</div>
+      <button class="btn btn-ghost hh-retire" id="btn-retire-now">Retire</button>
     </div>
     <div class="hh-stats">
       <div class="hh-stat"><b>${u.rank}</b><span>Rank</span></div>
@@ -1811,6 +1889,47 @@ function renderHub() {
   renderRankings();
   $('#news-list').innerHTML = career.messages.slice(0, 14)
     .map(m => `<li class="${m.kind}">${esc(m.msg)}</li>`).join('') || '<li>Season not started.</li>';
+  $('#btn-retire-now').addEventListener('click', doRetire);
+}
+
+/* ---------- retirement ---------------------------------------------------- */
+function doRetire() {
+  if (!confirm(`Retire ${career.user.name}? This ends the career for good — there's no undo.`)) return;
+  const summary = career.retire();
+  renderRetirement(summary);
+  show('screen-retirement');
+}
+
+function renderRetirement(s) {
+  const rows = [
+    ['Seasons played', s.seasons],
+    ['Career record', `${s.w}-${s.l} (${Math.round(s.winPct * 100)}%)`],
+    ['Titles', s.titles],
+    ['Grand Slams', s.slams],
+    ['Masters 1000s', s.masters],
+    ['Tour Finals', s.finals],
+    ['Weeks at world No. 1', s.weeksNo1],
+    ['Best ranking', '#' + s.bestRank],
+    ['Career prize money', '$' + (s.prize / 1e6).toFixed(1) + 'm']
+  ];
+  $('#retirement-body').innerHTML = `
+    <div class="retire-hero">
+      <div class="retire-name">${esc(s.name)} · retired at ${s.age}</div>
+      <div class="retire-tier">${esc(s.tier.label)}</div>
+      <p class="retire-blurb">${esc(s.tier.blurb)}</p>
+    </div>
+    <table class="season-table"><tbody>${rows.map(([k, v]) =>
+      `<tr><td>${k}</td><td style="text-align:right;font-family:var(--font-cond);font-size:18px">${v}</td></tr>`
+    ).join('')}</tbody></table>
+    ${s.honours.length ? `<h3 style="margin:26px 0 6px;font-size:20px;text-transform:uppercase;letter-spacing:.06em">Honours</h3>
+      <ul class="honours">${s.honours.map(h => `<li>${h.year} · ${esc(h.text)}</li>`).join('')}</ul>` : ''}
+    <div class="retire-actions"><button class="btn btn-primary btn-lg" id="btn-new-after-retire">Build a new player</button></div>`;
+  $('#btn-new-after-retire').addEventListener('click', () => {
+    career = null;
+    $('#btn-continue').hidden = true;
+    show('screen-identity');
+    $('#in-name').focus();
+  });
 }
 
 function renderCalendar() {
@@ -2129,6 +2248,7 @@ function renderOffseason() {
       <h2 class="screen-title">Pre-season</h2>
       <p style="color:var(--muted);margin-bottom:6px">Winter block. You have <strong style="color:var(--acc)">${budget - used}</strong> of ${budget} training points left.
       Age also moves your numbers on its own — ${u.age} going on ${u.age + 1}.</p>
+      ${u.age >= 34 ? `<p style="color:var(--dim);font-size:13px;margin-top:6px">The legs go first at this age. Plenty of players your age are already thinking about what comes after.</p>` : ''}
       <div style="margin-top:18px">${ATTRS.map(a => {
         const v = u.attrs[a.key], nv = v + spend[a.key];
         return `<div class="train-row">
@@ -2141,9 +2261,13 @@ function renderOffseason() {
           </span>
         </div>`;
       }).join('')}</div>
-      <div class="row-end"><button class="btn btn-primary btn-lg" id="btn-next-season">Start ${career.year + 1}</button></div>`;
+      <div class="row-end">
+        <button class="btn btn-ghost" id="btn-retire-offseason">Retire instead</button>
+        <button class="btn btn-primary btn-lg" id="btn-next-season">Start ${career.year + 1}</button>
+      </div>`;
     $$('[data-inc]').forEach(b => b.addEventListener('click', () => { spend[b.dataset.inc]++; draw(); }));
     $$('[data-dec]').forEach(b => b.addEventListener('click', () => { spend[b.dataset.dec]--; draw(); }));
+    $('#btn-retire-offseason').addEventListener('click', doRetire);
     $('#btn-next-season').addEventListener('click', () => {
       career.newSeason(spend);
       career.say(`${career.year} season begins.`, 'info');

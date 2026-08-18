@@ -49,12 +49,48 @@ class Builder {
   }
 }
 
+/* --- legacy verdict, checked top-down at retirement ----------------------- */
+function legacyTier(c, seasons) {
+  if (c.slams >= 8 && c.weeksNo1 >= 150) return {
+    label: 'GOAT Territory',
+    blurb: `${c.slams} Grand Slams and ${Math.round(c.weeksNo1 / 52)}+ years at world No. 1 — this is a career people build eras around.`
+  };
+  if (c.slams >= 3 || (c.titles >= 15 && c.masters >= 5)) return {
+    label: 'Hall of Famer',
+    blurb: `A genuine great of the game: ${c.slams} Grand Slam${c.slams === 1 ? '' : 's'}, ${c.masters} Masters 1000 title${c.masters === 1 ? '' : 's'}, a career that gets remembered.`
+  };
+  if (c.slams >= 1) return {
+    label: 'Grand Slam Champion',
+    blurb: `You won a major. Whatever else this career was, that line never gets erased.`
+  };
+  if (c.masters >= 3) return {
+    label: 'Masters Champion',
+    blurb: `No Slam, but ${c.masters} Masters 1000 titles is a career most tour pros never get close to.`
+  };
+  if (c.titles >= 1) return {
+    label: 'Tour Winner',
+    blurb: `${c.titles} ATP title${c.titles === 1 ? '' : 's'} on the board. You made a living beating some of the best players alive.`
+  };
+  if (c.bestRank <= 100) return {
+    label: 'Tour Professional',
+    blurb: `You cracked the top ${c.bestRank <= 50 ? '50' : '100'} across ${seasons} season${seasons === 1 ? '' : 's'} on tour. Most people who pick up a racquet never get within a mile of that.`
+  };
+  return {
+    label: 'Journeyman',
+    blurb: seasons === 0
+      ? `The tour is brutal, and it doesn't wait for anyone. You called it before your first season even finished.`
+      : `The tour is brutal, and it doesn't wait for anyone. ${seasons} season${seasons === 1 ? '' : 's'} on the road is still a full career.`
+  };
+}
+
 /* --- career -------------------------------------------------------------- */
 class Career {
   constructor(opts) {
     this.seed = opts.seed || (Date.now() % 2147483647);
     setSeed(this.seed);
     this.year = opts.year || 2026;
+    this.startYear = this.year;
+    this.seasonsCompleted = 0;
     this.eventIndex = 0;
     this.week = 0;
     this.messages = [];
@@ -287,6 +323,7 @@ class Career {
   get seasonOver() { return this.eventIndex >= CALENDAR.length; }
 
   endSeason() {
+    this.seasonsCompleted++;
     const table = rankAll(this.players, CALENDAR);
     const no1 = table[0].p;
     no1.career.weeksNo1 += 52;
@@ -333,6 +370,27 @@ class Career {
     return a <= 23 ? 6 : a <= 26 ? 5 : a <= 29 ? 4 : 3;
   }
 
+  /* --- retirement: the actual end of the game ----------------------------
+     There's no forced cutoff — attributes just keep declining with age — but
+     the player can call time whenever they want. This is where the run gets
+     judged and turned into a verdict, then the save is cleared: a retired
+     career is over, the only way forward is building someone new. */
+  retire() {
+    const u = this.user;
+    const c = u.career;
+    const winPct = (c.w + c.l) > 0 ? c.w / (c.w + c.l) : 0;
+    const summary = {
+      name: u.name, country: u.country, age: u.age,
+      seasons: this.seasonsCompleted, w: c.w, l: c.l, winPct,
+      titles: c.titles, slams: c.slams, masters: c.masters, finals: c.finals,
+      weeksNo1: c.weeksNo1, bestRank: c.bestRank, prize: c.prize,
+      honours: this.honours.slice(),
+      tier: legacyTier(c, this.seasonsCompleted)
+    };
+    Career.clear();
+    return summary;
+  }
+
   /* --- save/load --------------------------------------------------------- */
   toJSON() {
     const slim = p => ({
@@ -341,7 +399,8 @@ class Career {
       res: p.res, prev: p.prev, career: p.career, season: p.season
     });
     return {
-      v: 1, seed: this.seed, year: this.year, eventIndex: this.eventIndex, week: this.week,
+      v: 1, seed: this.seed, year: this.year, startYear: this.startYear,
+      seasonsCompleted: this.seasonsCompleted, eventIndex: this.eventIndex, week: this.week,
       messages: this.messages, seasonLog: this.seasonLog, honours: this.honours,
       entries: this.entries, injuryWeeks: this.injuryWeeks,
       user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim)
@@ -365,7 +424,8 @@ class Career {
     };
     const c = Object.create(Career.prototype);
     c.seed = d.seed; setSeed(d.seed + d.eventIndex * 977 + d.year);
-    c.year = d.year; c.eventIndex = d.eventIndex; c.week = d.week;
+    c.year = d.year; c.startYear = d.startYear || d.year; c.seasonsCompleted = d.seasonsCompleted || 0;
+    c.eventIndex = d.eventIndex; c.week = d.week;
     c.messages = d.messages || []; c.seasonLog = d.seasonLog || []; c.honours = d.honours || [];
     c.entries = d.entries || {}; c.injuryWeeks = d.injuryWeeks || 0;
     c.user = revive(d.user);
