@@ -31,6 +31,17 @@ python3 -m http.server 8000
 
 Careers save to `localStorage` under `baseline.career.v1`.
 
+## Deploying
+
+There is no build step — Vercel serves the repo root as a static site as-is.
+A Vercel project (`baseline-tennis`) is already created and linked to this
+repository; connecting a deployment is a single click in the dashboard, or
+from a checkout:
+
+```bash
+npx vercel --prod
+```
+
 ## How the simulation works
 
 The match engine is a **point-level Markov chain** — the standard approach in open-source
