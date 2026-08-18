@@ -569,7 +569,7 @@ function renderOffseason() {
         return `<div class="train-row">
           <span class="bl" style="font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">${a.label}</span>
           <span class="bar-track"><span class="bar-fill" style="width:${(nv - 35) / 0.64}%"></span></span>
-          <span class="bv ${vClass(nv)}" style="font-family:'Barlow Condensed';font-size:20px;font-weight:700;text-align:right">${nv}</span>
+          <span class="bv ${vClass(nv)}" style="font-family:var(--font-cond);font-size:20px;font-weight:700;text-align:right">${nv}</span>
           <span class="train-btns">
             <button class="tbtn" data-dec="${a.key}" ${spend[a.key] <= 0 ? 'disabled' : ''}>−</button>
             <button class="tbtn" data-inc="${a.key}" ${used >= budget || nv >= 99 ? 'disabled' : ''}>+</button>
