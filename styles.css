@@ -491,6 +491,85 @@ button,input,select{font:inherit;color:inherit}
   .tactic-choices{grid-template-columns:1fr}
 }
 
+/* ---------- rookie year ---------- */
+.rookie-panel{max-width:820px;margin:0 auto}
+.rookie-card{width:100%}
+.rookie-era{
+  text-align:center;
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  padding:22px 20px 18px;
+  margin-bottom:18px;
+}
+.era-head{display:flex;align-items:baseline;justify-content:center;gap:14px;flex-wrap:wrap}
+.era-year{
+  font-family:var(--font-cond);
+  font-size:clamp(38px,7vw,64px);
+  font-weight:700;
+  line-height:1;
+  color:var(--acc);
+  letter-spacing:.02em;
+}
+.era-head h3{
+  font-family:var(--font-cond);
+  font-size:clamp(18px,3vw,26px);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  margin:0;
+}
+.era-blurb{color:var(--muted);font-size:14px;line-height:1.55;margin:10px auto 0;max-width:56ch}
+.era-faces{
+  display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+  margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft);
+}
+.era-faces-label{
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+  width:100%;margin-bottom:2px;
+}
+.era-face{
+  display:inline-flex;align-items:baseline;gap:6px;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:999px;
+  padding:5px 12px;font-size:12.5px;
+}
+.era-face b{font-weight:600;color:var(--txt)}
+.era-face i{font-style:normal;color:var(--dim);font-size:11px;letter-spacing:.08em}
+
+.route-choices{display:grid;gap:10px}
+.route-btn{
+  display:block;width:100%;text-align:left;cursor:pointer;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 16px;color:inherit;font:inherit;
+  transition:border-color .15s,transform .15s,background .15s;
+}
+.route-btn:hover{border-color:var(--acc);transform:translateY(-2px);background:#1b2a36}
+.route-name{
+  display:block;font-family:var(--font-cond);font-size:20px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.route-blurb{display:block;color:var(--muted);font-size:13.5px;line-height:1.5;margin:4px 0 10px}
+.route-fx{display:flex;flex-wrap:wrap;gap:6px}
+.route-fx .fx{
+  display:inline-block;font-size:11.5px;letter-spacing:.04em;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:999px;
+  padding:3px 10px;color:var(--muted);
+}
+.route-fx .fx b{color:var(--txt);font-weight:600}
+.route-fx .fx.up{border-color:rgba(212,255,63,.35)}
+.route-fx .fx.up b{color:var(--acc)}
+
+.reveal-rookie{
+  display:flex;align-items:center;gap:14px;
+  border:1px solid var(--line);border-radius:var(--r);
+  background:var(--panel-2);padding:12px 16px;margin-bottom:16px;
+}
+.rr-year{
+  font-family:var(--font-cond);font-size:32px;font-weight:700;line-height:1;
+  color:var(--acc);
+}
+.reveal-rookie b{display:block;font-size:15px}
+.reveal-rookie span:not(.rr-year){display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+
 /* ---------- crawlable site footer ---------- */
 .site-foot{
   border-top:1px solid var(--line);

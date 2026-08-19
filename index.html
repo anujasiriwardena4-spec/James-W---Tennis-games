@@ -65,9 +65,10 @@
         </div>
         <div class="rule">
           <span class="rule-n">03</span>
-          <h3>Then you actually have to play</h3>
-          <p>Four Grand Slams, nine Masters 1000s, the Tour Finals. Qualifying if you're
-             ranked too low, points that roll off 52 weeks later, injuries if you flog yourself.</p>
+          <h3>Then pick your era and play</h3>
+          <p>Spin for the rookie year you turn pro into — 1983 through to now — and choose your
+             route onto tour. Four Grand Slams, nine Masters 1000s, qualifying if you're ranked
+             too low, points that roll off 52 weeks later, injuries if you flog yourself.</p>
         </div>
       </div>
       <p class="footnote">Unofficial fan project. Ratings are opinion, not endorsement.</p>
@@ -162,6 +163,36 @@
           <strong id="ovr-preview">—</strong>
         </div>
       </aside>
+    </div>
+  </section>
+
+  <!-- ================= ROOKIE YEAR ================= -->
+  <section class="screen" id="screen-rookie">
+    <div class="panel rookie-panel">
+      <div class="builder-head">
+        <h2 class="screen-title">Your rookie year</h2>
+        <div class="respins" id="rookie-pips" title="Respins remaining"></div>
+      </div>
+      <div class="spin-empty" id="rookie-empty">
+        <p>Spin for the season you turn pro into. Then choose how you arrive on tour —
+           the route decides your starting ranking, your bank balance and where your game is ahead.</p>
+        <button class="btn btn-primary btn-lg" id="btn-rookie-spin">Spin</button>
+      </div>
+      <div class="rookie-card" id="rookie-card" hidden>
+        <div class="rookie-era">
+          <div class="era-head">
+            <span class="era-year" id="rookie-year">—</span>
+            <h3 id="rookie-era-name">—</h3>
+          </div>
+          <p class="era-blurb" id="rookie-era-blurb"></p>
+          <div class="era-faces" id="rookie-era-faces"></div>
+        </div>
+        <div class="route-choices" id="route-choices"></div>
+        <div class="spin-card-actions">
+          <button class="btn btn-ghost" id="btn-rookie-respin">Respin <span id="rookie-respin-count">(2)</span></button>
+          <span class="hint">Pick a route to lock in your rookie year</span>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -370,6 +401,11 @@
        You build a player by spinning a wheel of real tour names and legends, taking exactly one of the
        eight ratings from each name that comes up: Sinner's backhand, Isner's serve, Nadal's stamina.
        Each name is used once, so every build is a different compromise.</p>
+    <p>You also spin for your rookie year: the era you turn pro into — 1983, 1993, 2005,
+       2015 or the present day — each with its own field at the top of the rankings, so
+       turning pro in 1993 means running into Sampras and Agassi rather than Sinner and
+       Alcaraz. Three routes onto tour come with every season, and the one you choose sets
+       your starting ranking, your bank balance and where your game is already ahead.</p>
     <p>From there you play the season. Seventeen events — four Grand Slams, the Masters 1000s, the ATP
        500s and the Tour Finals — on hard, clay, grass and indoor courts, each with its own scoring
        model, so serve-bots really do prefer grass and grinders really do prefer clay. Matches are

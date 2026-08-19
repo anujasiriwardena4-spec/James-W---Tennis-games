@@ -51,6 +51,59 @@ class Builder {
   }
 }
 
+/* --- the rookie-year wheel ------------------------------------------------
+   Same shape as the skill wheel: the spin lands on a season, and you choose
+   one of three routes into it. Respins throw away both the season and the
+   routes, so a respin is a real gamble rather than a reroll of the small half.
+------------------------------------------------------------------------- */
+const ROUTE_CHOICES = 3;
+
+class RookieSpinner {
+  constructor(eras, routes) {
+    this.eraPool = shuffle(eras.slice());
+    this.routes = routes;
+    this.cursor = 0;
+    this.respins = 2;
+    this.current = null;   // { era, routes: [...] }
+    this.picked = null;    // { era, route } once locked in
+  }
+  spin() {
+    if (this.cursor >= this.eraPool.length) { this.eraPool = shuffle(this.eraPool); this.cursor = 0; }
+    const era = this.eraPool[this.cursor++];
+    this.current = { era, routes: shuffle(this.routes.slice()).slice(0, ROUTE_CHOICES) };
+    return this.current;
+  }
+  respin() {
+    if (this.respins <= 0 || !this.current) return null;
+    this.respins--;
+    return this.spin();
+  }
+  take(routeId) {
+    if (!this.current) return null;
+    const route = this.current.routes.find(r => r.id === routeId);
+    if (!route) return null;
+    this.picked = { era: this.current.era, route };
+    return this.picked;
+  }
+}
+
+/* A route's head-start on the attributes it implies. `all` lifts everything,
+   `lowest` patches the single worst rating — everything else is by name. */
+function applyRouteBonus(attrs, route) {
+  const out = { ...attrs };
+  if (!route || !route.bonus) return out;
+  const b = route.bonus;
+  const bump = (k, n) => { if (out[k] != null) out[k] = Math.min(99, out[k] + n); };
+  Object.keys(b).forEach(k => {
+    if (k === 'all') Object.keys(out).forEach(x => bump(x, b.all));
+    else if (k === 'lowest') {
+      const worst = Object.keys(out).sort((x, y) => out[x] - out[y])[0];
+      bump(worst, b.lowest);
+    } else bump(k, b[k]);
+  });
+  return out;
+}
+
 /* --- legacy verdict, checked top-down at retirement ----------------------- */
 function legacyTier(c, seasons) {
   if (c.slams >= 8 && c.weeksNo1 >= 150) return {
@@ -90,7 +143,15 @@ class Career {
   constructor(opts) {
     this.seed = opts.seed || (Date.now() % 2147483647);
     setSeed(this.seed);
-    this.year = opts.year || 2026;
+    const era = opts.era || eraById('2026');
+    const route = opts.route || null;
+    this.eraId = era.id;
+    this.eraName = era.name;
+    this.routeId = route ? route.id : null;
+    this.routeName = route ? route.name : null;
+    // main-draw entries the route bought you — spent instead of qualifying
+    this.wildcards = route ? (route.wildcards || 0) : 0;
+    this.year = opts.year || era.year;
     this.startYear = this.year;
     this.seasonsCompleted = 0;
     this.slot = opts.slot || null;   // which save slot this career writes to
@@ -103,10 +164,12 @@ class Career {
     // cash on hand is career prize money minus whatever's been spent on
     // lifestyle purchases — the prize total itself never moves, so career-long
     // "money earned" stats stay accurate even after you've spent plenty of it
-    this.finances = { spent: 0, owned: { house: null, car: null, team: null } };
+    // `seed` is the money the rookie route arrived with; it sits alongside
+    // prize money so career earnings stay a clean record of what was won
+    this.finances = { seed: route ? (route.cash || 0) : 0, spent: 0, owned: { house: null, car: null, team: null } };
 
     this.user = opts.user;
-    this.tour = buildTour(TOUR_RAW);
+    this.tour = buildTour(era.tour);
     this.field = buildJourneymen(64, FIRST_NAMES, LAST_NAMES, COUNTRIES);
     this.players = [this.user].concat(this.tour, this.field);
 
@@ -123,7 +186,11 @@ class Career {
     };
     this.tour.forEach((p, i) => seedPoints(p, 900 + 11000 / Math.pow(1 + i * 0.55, 1.15)));
     this.field.forEach((p, i) => seedPoints(p, Math.max(20, 1000 - i * 14)));
-    CALENDAR.forEach(ev => { this.user.prev[ev.id] = 0; });
+    // the route's ranking total, spread across the calendar with no randomness
+    // so the number on the card is the number you actually start on
+    const startPts = route ? (route.pts || 0) : 0;
+    const shareSum = CALENDAR.reduce((t, ev) => t + SHARE[ev.cat], 0);
+    CALENDAR.forEach(ev => { this.user.prev[ev.id] = Math.round(startPts * SHARE[ev.cat] / shareSum); });
 
     rankAll(this.players, CALENDAR);
     this.entries = {};                 // eventId -> true/false (user's choice)
@@ -175,6 +242,12 @@ class Career {
     } else if (this.user.rank <= size - 1) {
       main = orderByPoints(pool.slice(0, size - 1).concat([this.user]), CALENDAR);
       userInMain = true;
+    } else if (this.wildcards > 0) {
+      // a route wildcard buys the last main-draw seat outright
+      this.wildcards--;
+      main = orderByPoints(pool.slice(0, size - 1).concat([this.user]), CALENDAR);
+      userInMain = true;
+      this.say(`Wildcard into the ${ev.name} main draw. ${this.wildcards} left.`, 'good');
     } else {
       // qualifying: a 4-player mini-draw for the last main-draw seat. Two
       // rivals come from around your own ranking; the third is deliberately
@@ -394,7 +467,7 @@ class Career {
      cashOnHand is prize money minus what's been spent — career.prize itself
      never moves, so "career earnings" stats stay accurate after a purchase.
      netWorth adds back the sticker price of everything currently owned. */
-  cashOnHand() { return this.user.career.prize - this.finances.spent; }
+  cashOnHand() { return (this.finances.seed || 0) + this.user.career.prize - this.finances.spent; }
   netWorth() {
     let owned = 0;
     for (const cat in this.finances.owned) {
@@ -454,14 +527,17 @@ class Career {
       res: p.res, prev: p.prev, career: p.career, season: p.season
     });
     return {
-      v: 2, seed: this.seed, year: this.year, startYear: this.startYear,
+      v: 3, seed: this.seed, year: this.year, startYear: this.startYear,
+      eraId: this.eraId, eraName: this.eraName,
+      routeId: this.routeId, routeName: this.routeName, wildcards: this.wildcards,
       seasonsCompleted: this.seasonsCompleted, eventIndex: this.eventIndex, week: this.week,
       messages: this.messages, seasonLog: this.seasonLog, honours: this.honours,
       entries: this.entries, injuryWeeks: this.injuryWeeks, finances: this.finances,
       user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim),
       meta: {
         name: this.user.name, country: this.user.country, age: this.user.age,
-        year: this.year, ovr: overall(this.user), rank: this.user.rank || null,
+        year: this.year, era: this.eraName, route: this.routeName,
+        ovr: overall(this.user), rank: this.user.rank || null,
         titles: this.user.career.titles, slams: this.user.career.slams,
         savedAt: Date.now()
       }
@@ -504,10 +580,14 @@ class Career {
     c.slot = slot;
     c.seed = d.seed; setSeed(d.seed + d.eventIndex * 977 + d.year);
     c.year = d.year; c.startYear = d.startYear || d.year; c.seasonsCompleted = d.seasonsCompleted || 0;
+    c.eraId = d.eraId || '2026'; c.eraName = d.eraName || eraById(c.eraId).name;
+    c.routeId = d.routeId || null; c.routeName = d.routeName || null;
+    c.wildcards = d.wildcards || 0;
     c.eventIndex = d.eventIndex; c.week = d.week;
     c.messages = d.messages || []; c.seasonLog = d.seasonLog || []; c.honours = d.honours || [];
     c.entries = d.entries || {}; c.injuryWeeks = d.injuryWeeks || 0;
-    c.finances = d.finances || { spent: 0, owned: { house: null, car: null, team: null } };
+    c.finances = d.finances || { seed: 0, spent: 0, owned: { house: null, car: null, team: null } };
+    if (c.finances.seed == null) c.finances.seed = 0;
     c.user = revive(d.user);
     c.tour = d.tour.map(revive);
     c.field = d.field.map(revive);
@@ -518,4 +598,4 @@ class Career {
   }
 }
 
-if (typeof module !== 'undefined') { module.exports = { Builder, Career, SAVE_SLOTS }; }
+if (typeof module !== 'undefined') { module.exports = { Builder, RookieSpinner, applyRouteBonus, Career, SAVE_SLOTS }; }

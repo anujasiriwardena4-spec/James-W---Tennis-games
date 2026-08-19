@@ -13,6 +13,7 @@ let rankMode = 'live';
 let busy = false;
 // where a completed build should land: 'career' (default) or a doubles seat
 let builderTarget = 'career';
+let rookie = null;
 let doublesSlots = [null, null, null, null];
 let singlesSlots = [null, null];
 
@@ -103,7 +104,7 @@ function renderSaves() {
     return `<div class="save-slot">
         <div class="save-slot-main">
           <div class="save-slot-name">${esc(m.name)}</div>
-          <div class="save-slot-meta">${m.country} · ${m.year} season · OVR ${m.ovr}${m.rank ? ` · #${m.rank}` : ''}${m.titles ? ` · ${m.titles} title${m.titles === 1 ? '' : 's'}` : ''}</div>
+          <div class="save-slot-meta">${m.country} · ${m.year} season${m.era ? ` · ${esc(m.era)}` : ''} · OVR ${m.ovr}${m.rank ? ` · #${m.rank}` : ''}${m.titles ? ` · ${m.titles} title${m.titles === 1 ? '' : 's'}` : ''}</div>
         </div>
         <div class="save-slot-actions">
           <button class="btn btn-primary" data-load="${s.slot}">Continue</button>
@@ -142,6 +143,8 @@ function renderSaves() {
 
 function resetBuilder() {
   builder = new Builder(POOL_RAW, ATTR_KEYS);
+  rookie = new RookieSpinner(ERAS, ROOKIE_ROUTES);
+  resetRookieScreen();
   renderBuilder();
   $('#spin-card').hidden = true; $('#spin-empty').hidden = false;
   $('#btn-spin').disabled = false; $('#btn-spin').textContent = 'Spin';
@@ -253,7 +256,7 @@ $('#attr-choices').addEventListener('click', e => {
       }
       return;
     }
-    revealPlayer();
+    show('screen-rookie');
     return;
   }
   $('#spin-card').hidden = true;
@@ -263,6 +266,102 @@ $('#attr-choices').addEventListener('click', e => {
     builder.remaining.map(k => ATTRS.find(a => a.key === k).label).join(', ') + '.';
   $('#btn-spin').disabled = false;
   $('#btn-spin').textContent = 'Spin again';
+});
+
+/* ---------- rookie year --------------------------------------------------
+   The wheel lands on a season; you choose one of three routes into it. Same
+   deal as the skill wheel — the choice is yours, the options are not.
+------------------------------------------------------------------------- */
+function resetRookieScreen() {
+  $('#rookie-card').hidden = true;
+  $('#rookie-empty').hidden = false;
+  $('#btn-rookie-spin').disabled = false;
+  renderRookiePips();
+}
+
+function renderRookiePips() {
+  const left = rookie ? rookie.respins : 0;
+  $('#rookie-pips').innerHTML = [0, 1].map(i => `<span class="pip ${i < left ? '' : 'spent'}"></span>`).join('');
+  $('#rookie-respin-count').textContent = `(${left})`;
+  $('#btn-rookie-respin').disabled = left <= 0;
+}
+
+/* the three biggest names in the era's field — what the year actually feels
+   like to walk into */
+function eraFacesHTML(era) {
+  return era.tour.slice(0, 3).map(r =>
+    `<span class="era-face"><b>${esc(r[0])}</b><i>${r[1]}</i></span>`).join('');
+}
+
+function routeEffectsHTML(route) {
+  const bits = [];
+  bits.push(`<span class="fx"><b>${route.pts || 0}</b> pts</span>`);
+  bits.push(`<span class="fx"><b>${fmtMoney(route.cash || 0)}</b></span>`);
+  if (route.wildcards) bits.push(`<span class="fx"><b>${route.wildcards}</b> wildcard${route.wildcards === 1 ? '' : 's'}</span>`);
+  const b = route.bonus || {};
+  Object.keys(b).forEach(k => {
+    const label = k === 'all' ? 'everything' : k === 'lowest' ? 'weakest rating'
+      : (ATTRS.find(a => a.key === k) || {}).label || k;
+    bits.push(`<span class="fx up"><b>+${b[k]}</b> ${esc(label)}</span>`);
+  });
+  return bits.join('');
+}
+
+function renderRookieCard(cur) {
+  $('#rookie-empty').hidden = true;
+  $('#rookie-card').hidden = false;
+  $('#rookie-year').textContent = cur.era.year;
+  $('#rookie-era-name').textContent = cur.era.name;
+  $('#rookie-era-blurb').textContent = cur.era.blurb;
+  $('#rookie-era-faces').innerHTML =
+    `<span class="era-faces-label">Top of the field</span>` + eraFacesHTML(cur.era);
+  $('#route-choices').innerHTML = cur.routes.map(r => `
+    <button class="route-btn" data-route="${r.id}">
+      <span class="route-name">${esc(r.name)}</span>
+      <span class="route-blurb">${esc(r.blurb)}</span>
+      <span class="route-fx">${routeEffectsHTML(r)}</span>
+    </button>`).join('');
+  $('#rookie-card').classList.remove('rolling');
+  void $('#rookie-card').offsetWidth;
+  $('#rookie-card').classList.add('rolling');
+  renderRookiePips();
+}
+
+async function doRookieSpin(isRespin) {
+  if (busy || !rookie) return;
+  busy = true;
+  $('#btn-rookie-spin').disabled = true;
+  $('#btn-rookie-respin').disabled = true;
+  const cur = isRespin ? rookie.respin() : rookie.spin();
+  if (!cur) { busy = false; renderRookiePips(); return; }
+  // roll through a few seasons before settling, same as the skill wheel
+  $('#rookie-empty').hidden = true;
+  $('#rookie-card').hidden = false;
+  $('#route-choices').innerHTML = '';
+  $('#rookie-era-faces').innerHTML = '';
+  const reel = shuffle(ERAS.slice()).slice(0, 5);
+  for (let i = 0; i < reel.length; i++) {
+    $('#rookie-year').textContent = reel[i].year;
+    $('#rookie-era-name').textContent = reel[i].name;
+    $('#rookie-era-blurb').textContent = '';
+    await sleep(70 + i * 32);
+  }
+  renderRookieCard(cur);
+  busy = false;
+}
+
+$('#btn-rookie-spin').addEventListener('click', () => doRookieSpin(false));
+$('#btn-rookie-respin').addEventListener('click', () => {
+  if (!rookie || rookie.respins <= 0) return;
+  doRookieSpin(true);
+});
+$('#route-choices').addEventListener('click', e => {
+  const b = e.target.closest('.route-btn');
+  if (!b || busy || !rookie) return;
+  const picked = rookie.take(b.dataset.route);
+  if (!picked) return;
+  toast(`${picked.route.name} — turning pro in ${picked.era.year}`, 'good');
+  revealPlayer();
 });
 
 /* ---------- reveal ------------------------------------------------------- */
@@ -291,14 +390,23 @@ function playerCardHTML(p, opts) {
 }
 
 function makeUserPlayer() {
-  return makePlayer(identity.name, identity.country, builder.attrs(), {
+  const route = rookie && rookie.picked ? rookie.picked.route : null;
+  return makePlayer(identity.name, identity.country, applyRouteBonus(builder.attrs(), route), {
     id: 'user', isUser: true, hand: identity.hand, bh: identity.bh, age: identity.age
   });
 }
 
 function revealPlayer() {
   const p = makeUserPlayer();
-  $('#reveal-card').innerHTML = playerCardHTML(p, { sources: builder.slots });
+  const pick = rookie && rookie.picked;
+  const banner = pick ? `<div class="reveal-rookie">
+      <span class="rr-year">${pick.era.year}</span>
+      <div>
+        <b>${esc(pick.route.name)}</b>
+        <span>${esc(pick.era.name)} · starting on ${pick.route.pts || 0} pts with ${fmtMoney(pick.route.cash || 0)}${pick.route.wildcards ? ` and ${pick.route.wildcards} wildcard${pick.route.wildcards === 1 ? '' : 's'}` : ''}</span>
+      </div>
+    </div>` : '';
+  $('#reveal-card').innerHTML = banner + playerCardHTML(p, { sources: builder.slots });
   show('screen-reveal');
   requestAnimationFrame(() => $$('.bar-fill').forEach(b => { const w = b.style.width; b.style.width = '0'; requestAnimationFrame(() => b.style.width = w); }));
 }
@@ -316,8 +424,9 @@ $('#btn-start-career').addEventListener('click', async () => {
     );
     if (!slot) return;
   }
-  career = new Career({ user: makeUserPlayer(), year: 2026, slot });
-  career.say(`${career.user.name} turns pro.`, 'good');
+  const picked = (rookie && rookie.picked) || { era: eraById('2026'), route: null };
+  career = new Career({ user: makeUserPlayer(), era: picked.era, route: picked.route, slot });
+  career.say(`${career.user.name} turns pro in ${picked.era.year}${picked.route ? ` — ${picked.route.name}` : ''}.`, 'good');
   career.save();
   renderHub(); show('screen-hub');
 });
@@ -329,7 +438,7 @@ function renderHub() {
   $('#hub-header').innerHTML = `
     <div>
       <div class="hh-name">${esc(u.name)}</div>
-      <div class="hh-sub">${u.country} · ${u.age} yrs · OVR ${ovr} · ${career.year} season</div>
+      <div class="hh-sub">${u.country} · ${u.age} yrs · OVR ${ovr} · ${career.year} season${career.eraName ? ` · ${esc(career.eraName)}` : ''}${career.wildcards ? ` · ${career.wildcards} wildcard${career.wildcards === 1 ? '' : 's'}` : ''}</div>
       <div class="hh-btnrow">
         <button class="btn btn-ghost hh-lifestyle" id="btn-lifestyle-now">Lifestyle</button>
         <button class="btn btn-ghost hh-retire" id="btn-retire-now">Retire</button>
