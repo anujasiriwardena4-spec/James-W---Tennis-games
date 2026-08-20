@@ -464,38 +464,398 @@ function eraById(id) { return ERAS.find(e => e.id === id) || ERAS[ERAS.length - 
 const ROOKIE_ROUTES = [
   { id: 'junior-slam', name: 'Junior Slam Champion',
     blurb: 'You won a junior major and the tour already knows your name. The expectation arrives with it.',
-    pts: 260, cash: 120000, wildcards: 3, bonus: { mental: 2 } },
+    pts: 260, cash: 120000, wildcards: 3, fame: 12, bonus: { mental: 2 } },
   { id: 'wildcard', name: 'Home Wildcard',
     blurb: 'Your federation handed you a main-draw wildcard at the home slam. One good week and you never have to qualify again.',
-    pts: 90, cash: 200000, wildcards: 4, bonus: { serve: 2 } },
+    pts: 90, cash: 200000, wildcards: 4, fame: 8, bonus: { serve: 2 } },
   { id: 'qualifier', name: 'Qualifying Grinder',
     blurb: 'No hype, no help, three matches every week just to reach the first round. You will be fit, at least.',
-    pts: 25, cash: 30000, wildcards: 0, bonus: { stamina: 4 } },
+    pts: 25, cash: 30000, wildcards: 0, fame: 1, bonus: { stamina: 4 } },
   { id: 'academy', name: 'Academy Prodigy',
     blurb: 'A decade inside a famous academy, funded by people expecting a return. The strokes are finished; the results are not.',
-    pts: 170, cash: 380000, wildcards: 2, bonus: { forehand: 2, backhand: 2 } },
+    pts: 170, cash: 380000, wildcards: 2, fame: 6, bonus: { forehand: 2, backhand: 2 } },
   { id: 'challenger', name: 'Challenger Champion',
     blurb: 'You cleaned up on the second tier all year. Nobody watched, but the ranking points are real.',
-    pts: 320, cash: 80000, wildcards: 1, bonus: { movement: 2 } },
+    pts: 320, cash: 80000, wildcards: 1, fame: 4, bonus: { movement: 2 } },
   { id: 'college', name: 'College Standout',
     blurb: 'Four years of team tennis and a degree to fall back on. You arrive late but you arrive knowing how to compete.',
-    pts: 70, cash: 110000, wildcards: 2, bonus: { mental: 3 } },
+    pts: 70, cash: 110000, wildcards: 2, fame: 3, bonus: { mental: 3 } },
   { id: 'tour-family', name: 'Tour Family',
     blurb: 'A parent played. The travel, the coaches and the contacts were all sorted before you hit a ball for money.',
-    pts: 110, cash: 850000, wildcards: 3, bonus: { net: 1, mental: 1 } },
+    pts: 110, cash: 850000, wildcards: 3, fame: 9, bonus: { net: 1, mental: 1 } },
   { id: 'olympic', name: 'Olympic Medallist',
     blurb: 'A medal before a ranking. Sponsors found you first and the tour is still working out whether it was a fluke.',
-    pts: 200, cash: 170000, wildcards: 2, bonus: { ret: 2 } },
+    pts: 200, cash: 170000, wildcards: 2, fame: 15, bonus: { ret: 2 } },
   { id: 'late-bloomer', name: 'Late Bloomer',
     blurb: 'You were nowhere at eighteen. Something clicked, and now the weakest part of your game is no longer weak.',
-    pts: 45, cash: 45000, wildcards: 1, bonus: { lowest: 5 } },
+    pts: 45, cash: 45000, wildcards: 1, fame: 2, bonus: { lowest: 5 } },
   { id: 'unknown', name: 'Complete Unknown',
     blurb: 'No federation, no academy, no backer. If you get anywhere it will be entirely on the racquet.',
-    pts: 0, cash: 15000, wildcards: 0, bonus: { all: 1 } }
+    pts: 0, cash: 15000, wildcards: 0, fame: 0, bonus: { all: 1 } }
+];
+
+/* --- Life stages ----------------------------------------------------------
+   The rung of the ladder you're standing on. Stages gate which life events
+   can reach you, and the hub shows the whole track so you can see where the
+   career sits. Order matters: `stageFor` walks this list and takes the first
+   stage whose test passes, so the specific cases sit above the general ones.
+------------------------------------------------------------------------- */
+const LIFE_STAGES = [
+  { id: 'rookie',    name: 'Rookie',       blurb: 'First season on tour. Nobody knows your name yet.' },
+  { id: 'grinder',   name: 'The Grind',    blurb: 'Qualifying draws, cheap flights, and results that will not come.' },
+  { id: 'regular',   name: 'Tour Regular', blurb: 'Into main draws on ranking alone. A living, if not yet a career.' },
+  { id: 'contender', name: 'Contender',    blurb: 'Seeded, dangerous, and expected to go deep.' },
+  { id: 'elite',     name: 'Elite',        blurb: 'Top of the game. Everything you do is now news.' },
+  { id: 'veteran',   name: 'Veteran',      blurb: 'The body is negotiating. The head knows more than it ever did.' }
+];
+
+function stageFor(ctx) {
+  if (ctx.age >= 32) return 'veteran';
+  if (ctx.seasons === 0) return 'rookie';
+  if (ctx.slams >= 1 || ctx.rank <= 5) return 'elite';
+  if (ctx.rank <= 25) return 'contender';
+  if (ctx.rank <= 70) return 'regular';
+  return 'grinder';
+}
+
+/* --- Life events ----------------------------------------------------------
+   The bit between the matches. One can land after any tournament; each is
+   drawn from the pool your current stage unlocks and never repeats.
+
+   Effects a choice can carry:
+     cash    money in or out (a choice you cannot afford is offered greyed out)
+     fame    0-100, drives the endorsement cheque paid at the end of each season
+     fatigue 0-100, straight onto the fatigue meter (negative is rest)
+     form    the 0.92-1.08 form multiplier, nudged
+     attrs   permanent rating changes
+------------------------------------------------------------------------- */
+const LIFE_EVENTS = [
+  /* ---------------- rookie ---------------- */
+  { id: 'first-cheque', stages: ['rookie'], title: 'The first real cheque',
+    text: 'Your first main-draw prize money has cleared. It is more than either of your parents made last year, and they spent a decade driving you to courts at six in the morning.',
+    choices: [
+      { label: 'Send it home', detail: 'They earned it as much as you did.',
+        fx: { cash: -40000, fame: 2, attrs: { mental: 2 } },
+        outcome: 'Your mum cries down the phone. Whatever happens now, that part is already paid back.' },
+      { label: 'Bank every cent', detail: 'A season on tour is expensive and nobody is funding you.',
+        fx: { cash: 25000, attrs: { mental: 1 } },
+        outcome: 'Unglamorous, and exactly right. You can now afford a full season without begging anyone.' },
+      { label: 'Buy proper kit', detail: 'New frames, strung right, and shoes that fit.',
+        fx: { cash: -18000, attrs: { serve: 1, movement: 1 } },
+        outcome: 'The difference is small and instant. You had been playing with the wrong tension for a year.' }
+    ] },
+  { id: 'school-or-tour', stages: ['rookie'], title: 'Exams or entries',
+    text: 'Your final school exams fall in the same fortnight as two events you are entered in. You cannot do both.',
+    choices: [
+      { label: 'Sit the exams', detail: 'Something to fall back on.',
+        fx: { fatigue: 10, attrs: { mental: 3 } },
+        outcome: 'You pass. It changes nothing about your tennis and everything about how you sleep.' },
+      { label: 'Play the events', detail: 'The ranking will not wait.',
+        fx: { fame: 1, attrs: { ret: 1, movement: 1 } },
+        outcome: 'Two wins and a hard loss. You are a tennis player now, formally, with nothing behind you.' }
+    ] },
+  { id: 'first-agent', stages: ['rookie', 'grinder'], title: 'A man with a card',
+    text: 'An agent from a large management group finds you in the player lounge. He has watched two of your matches and knows your junior record by heart.',
+    choices: [
+      { label: 'Sign with the agency', detail: 'Doors open, but they take their cut.',
+        fx: { cash: 60000, fame: 6 },
+        outcome: 'A boot deal lands inside a month. So does a schedule you did not entirely agree to.' },
+      { label: 'Stay independent', detail: 'Slower, but nobody owns a piece of you.',
+        fx: { attrs: { mental: 2 } },
+        outcome: 'He is gracious about it. You book your own flights for another two years and never regret it.' }
+    ] },
+  { id: 'homesick', stages: ['rookie'], title: 'Eleven weeks away',
+    text: 'You have been on the road since February. Tonight is another hotel room in another city where you know nobody.',
+    choices: [
+      { label: 'Fly a parent out', detail: 'Expensive, and worth it.',
+        fx: { cash: -12000, fatigue: -12, attrs: { mental: 2 } },
+        outcome: 'They stay a fortnight, cook once, and say almost nothing useful. You play free for a month.' },
+      { label: 'Put your head down', detail: 'Everyone does this. Get on with it.',
+        fx: { fatigue: 8, attrs: { mental: 1 } },
+        outcome: 'You get through it. Something hardens that you will be grateful for later and cannot describe now.' }
+    ] },
+
+  /* ---------------- grinder ---------------- */
+  { id: 'challenger-grind', stages: ['grinder'], title: 'Six weeks, six challengers',
+    text: 'The only way up is a block of second-tier events back to back — night buses, shared rooms, no physio.',
+    choices: [
+      { label: 'Play all six', detail: 'Points are points.',
+        fx: { fatigue: 26, fame: 2, attrs: { stamina: 2, mental: 1 } },
+        outcome: 'You come out of it exhausted, ranked considerably higher, and able to play tired without panicking.' },
+      { label: 'Play three and train', detail: 'Half the points, half the wear.',
+        fx: { fatigue: 8, attrs: { forehand: 1, backhand: 1 } },
+        outcome: 'The block in the middle is the most useful fortnight of practice you have had in two years.' }
+    ] },
+  { id: 'the-backer', stages: ['grinder', 'regular'], title: 'An offer of funding',
+    text: 'A businessman who watches you at your home club offers to fund a full season — flights, coach, physio — for a slice of your prize money for the next five years.',
+    choices: [
+      { label: 'Take the money', detail: 'A proper season, right now.',
+        fx: { cash: 220000, fatigue: -10, attrs: { mental: -1 } },
+        outcome: 'You travel properly for the first time. The percentage will follow you around for years, and you knew that.' },
+      { label: 'Turn it down', detail: 'Keep every cent you win.',
+        fx: { attrs: { mental: 2 } },
+        outcome: 'Harder, cheaper, yours. You fly economy with a bag of your own strings.' }
+    ] },
+  { id: 'coach-split', stages: ['grinder', 'regular'], title: 'The coach who got you here',
+    text: 'The man who has coached you since you were nine says, plainly and without self-pity, that he has taken you as far as he can.',
+    choices: [
+      { label: 'Move on', detail: 'He is right, and he knows it.',
+        fx: { cash: -60000, attrs: { forehand: 1, backhand: 1, ret: 1 } },
+        outcome: 'The new voice fixes a return position you have had wrong for a decade. You still call him after finals.' },
+      { label: 'Keep him', detail: 'Loyalty is worth something too.',
+        fx: { attrs: { mental: 3 } },
+        outcome: 'Your technique stops improving. Your head never once wobbles in a tight third set.' }
+    ] },
+  { id: 'wrong-draw', stages: ['grinder', 'regular'], title: 'A brutal draw',
+    text: 'You have drawn a seed in the first round for the fourth event running. The ranking says you deserve it; the schedule says you have no chance to build anything.',
+    choices: [
+      { label: 'Study the tape', detail: 'Two days of it, shot by shot.',
+        fx: { fatigue: 6, attrs: { ret: 2 } },
+        outcome: 'You find a pattern on the second serve nobody had told you about. You lose in three, closely.' },
+      { label: 'Forget the seeding', detail: 'Play your game and see.',
+        fx: { form: 0.02, attrs: { mental: 1 } },
+        outcome: 'It goes badly and you do not care. Something about that turns out to be useful.' }
+    ] },
+
+  /* ---------------- regular ---------------- */
+  { id: 'first-endorsement', stages: ['regular', 'contender'], title: 'A racquet contract',
+    text: 'A manufacturer wants you in their frames. The money is real. The frame is not the one you have used since you were fourteen.',
+    choices: [
+      { label: 'Sign and switch', detail: 'Take the deal, learn the frame.',
+        fx: { cash: 400000, fame: 5, attrs: { forehand: -1, backhand: -1 } },
+        outcome: 'Three bad months, then it settles. The cheque clears either way.' },
+      { label: 'Sign, keep your frame', detail: 'They paint your old frame in their colours. Less money.',
+        fx: { cash: 150000, fame: 3 },
+        outcome: 'A common arrangement, quietly done. Nobody watching at home can tell.' },
+      { label: 'Walk away', detail: 'Nothing changes about your equipment.',
+        fx: { attrs: { mental: 1 } },
+        outcome: 'Your agent is furious. Your forehand is exactly where you left it.' }
+    ] },
+  { id: 'fitness-overhaul', stages: ['regular', 'contender'], title: 'A brutal off-court block',
+    text: 'A fitness coach has looked at your data and told you the truth: you lose matches in the fourth set because you are not fit enough, not because you are not good enough.',
+    choices: [
+      { label: 'Do the whole block', detail: 'Six weeks of work you will hate.',
+        fx: { cash: -90000, fatigue: 20, attrs: { stamina: 4, movement: 2 } },
+        outcome: 'You have never felt worse. Next February you win a five-setter you would have lost in straight sets.' },
+      { label: 'A lighter version', detail: 'Keep some tennis in the schedule.',
+        fx: { cash: -35000, fatigue: 8, attrs: { stamina: 2 } },
+        outcome: 'A sensible compromise that makes you slightly better at everything and dramatically better at nothing.' }
+    ] },
+  { id: 'nagging-wrist', stages: ['regular', 'contender', 'elite'], title: 'The wrist',
+    text: 'It has been sore for six weeks. The scan shows nothing structural, which the doctor says is good news and does not feel like it.',
+    choices: [
+      { label: 'Take a month off', detail: 'Rest it properly, lose the points.',
+        fx: { fatigue: -30, attrs: { mental: 1 } },
+        outcome: 'The ranking slides. The wrist stops talking to you and never brings it up again.' },
+      { label: 'Play through it', detail: 'Tape it and keep entering.',
+        fx: { fatigue: 16, form: -0.02, attrs: { forehand: -1 } },
+        outcome: 'You get the points. The wrist becomes a thing you manage rather than a thing you fixed.' }
+    ] },
+  { id: 'tabloid', stages: ['regular', 'contender', 'elite'], title: 'A photo you did not pose for',
+    text: 'A picture of you leaving a bar at 2am the night before a first round is on the back page. You lost that match.',
+    choices: [
+      { label: 'Own it publicly', detail: 'Say the obvious thing and move on.',
+        fx: { fame: 4, attrs: { mental: 2 } },
+        outcome: 'The story dies in a day. Players you have never spoken to tell you it was the right call.' },
+      { label: 'Say nothing', detail: 'Let it burn out on its own.',
+        fx: { fame: -2, attrs: { mental: 1 } },
+        outcome: 'It takes a fortnight instead of a day, and you learn who in your box talks to journalists.' }
+    ] },
+  { id: 'charity-exo', stages: ['regular', 'contender', 'elite'], title: 'A hospital exhibition',
+    text: 'A children’s hospital in your home city wants you for an afternoon. There is no fee and it falls in the middle of your only rest week.',
+    choices: [
+      { label: 'Go', detail: 'Give up the rest day.',
+        fx: { fatigue: 6, fame: 5, attrs: { mental: 2 } },
+        outcome: 'A nine-year-old with a drip in her arm returns your serve. You think about it before every final you ever play.' },
+      { label: 'Send kit instead', detail: 'Signed racquets and a video message.',
+        fx: { cash: -8000, fame: 1 },
+        outcome: 'Genuinely appreciated, and not the same thing, and you know it.' }
+    ] },
+
+  /* ---------------- contender ---------------- */
+  { id: 'super-coach', stages: ['contender', 'elite'], title: 'A former great calls',
+    text: 'Someone who won majors when you were a child wants to work with you. The fee is enormous and so is the demand: their schedule, their pre-season, their opinion on everything.',
+    choices: [
+      { label: 'Hire them', detail: 'Hand over the keys.',
+        fx: { cash: -800000, attrs: { mental: 3, ret: 2, net: 1 } },
+        outcome: 'They rebuild how you think about a match. You have never been coached this hard and it works.' },
+      { label: 'Consultancy only', detail: 'A fortnight before each major.',
+        fx: { cash: -220000, attrs: { mental: 1, ret: 1 } },
+        outcome: 'You get the good bits and keep your independence. They think you are wasting the opportunity.' },
+      { label: 'Decline', detail: 'Your team got you here.',
+        fx: { attrs: { mental: 1 } },
+        outcome: 'Your coach hears about the offer anyway. He never mentions it and works twice as hard.' }
+    ] },
+  { id: 'december-exos', stages: ['contender', 'elite'], title: 'The December money',
+    text: 'A promoter offers a fortnight of exhibitions across three countries in December. It is a serious amount of money for six matches that count for nothing.',
+    choices: [
+      { label: 'Play the tour', detail: 'Take the money, lose the pre-season.',
+        fx: { cash: 1200000, fatigue: 22, fame: 6, attrs: { stamina: -1 } },
+        outcome: 'You arrive in January rich and underdone. The Australian Open is not kind about it.' },
+      { label: 'Do the pre-season', detail: 'Six weeks of proper work instead.',
+        fx: { fatigue: -20, attrs: { stamina: 2, movement: 1 } },
+        outcome: 'Nobody pays you a cent for December. You start the season in the best shape of your life.' }
+    ] },
+  { id: 'the-rival', stages: ['contender', 'elite'], title: 'Words at the net',
+    text: 'You beat someone you have never liked, and the handshake was three seconds of something the cameras caught. A reporter asks you about it while you are still sweating.',
+    choices: [
+      { label: 'Fan the flames', detail: 'Say what you actually think.',
+        fx: { fame: 10, attrs: { mental: -1 } },
+        outcome: 'The rivalry sells out arenas for six years. It also lives in your head at 4–5 in the third.' },
+      { label: 'Defuse it', detail: 'Praise him and change the subject.',
+        fx: { fame: -1, attrs: { mental: 2 } },
+        outcome: 'The story dies. He sends a message that evening, and the next time you play it is only tennis.' }
+    ] },
+  { id: 'parents-house', stages: ['contender', 'elite'], title: 'The house on the hill',
+    text: 'Your parents still live in the house you grew up in, with the garage door you hit a thousand balls against. You can now buy them any house they want.',
+    choices: [
+      { label: 'Buy it for them', detail: 'They will refuse, then accept.',
+        fx: { cash: -1400000, fame: 3, attrs: { mental: 3 } },
+        outcome: 'Your father walks around it for an hour without speaking. It is the best money you ever spend.' },
+      { label: 'Pay off their mortgage', detail: 'Quieter, and what they actually asked for.',
+        fx: { cash: -320000, attrs: { mental: 2 } },
+        outcome: 'They stay in the house with the garage door. Everyone is happier this way.' }
+    ] },
+
+  /* ---------------- elite ---------------- */
+  { id: 'mega-deal', stages: ['elite'], title: 'An apparel contract',
+    text: 'The number in front of you is larger than everything you have won in your career. It comes with eighteen commercial days a year.',
+    choices: [
+      { label: 'Sign it', detail: 'Life-changing money, real obligations.',
+        fx: { cash: 9000000, fame: 18, fatigue: 14, attrs: { stamina: -1 } },
+        outcome: 'You are on a building in Tokyo. You are also on a plane far more often than your physio would like.' },
+      { label: 'Negotiate it down', detail: 'Half the money, half the days.',
+        fx: { cash: 4000000, fame: 9, fatigue: 4 },
+        outcome: 'Your agent calls it the most expensive lie-in in history. You win a major that year.' }
+    ] },
+  { id: 'foundation', stages: ['elite'], title: 'Start a foundation',
+    text: 'You want to put courts and coaching into the kind of place you came from. Doing it properly means money and, more expensively, your time.',
+    choices: [
+      { label: 'Fund it properly', detail: 'Endow it and show up.',
+        fx: { cash: -2600000, fame: 12, attrs: { mental: 3 } },
+        outcome: 'Four courts, two coaches and a minibus. Eleven years later one of those kids makes the top 100.' },
+      { label: 'Lend your name', detail: 'Others run it, you appear twice a year.',
+        fx: { cash: -400000, fame: 6, attrs: { mental: 1 } },
+        outcome: 'It does real good and you are honest with yourself about how much of it is yours.' }
+    ] },
+  { id: 'olympic-year', stages: ['elite', 'contender'], title: 'The Olympic question',
+    text: 'The Games fall three weeks before the last major of the year, on a different surface, on the other side of the world. Half the top ten are skipping it.',
+    choices: [
+      { label: 'Go', detail: 'Play for the flag.',
+        fx: { fatigue: 20, fame: 14, attrs: { mental: 2 } },
+        outcome: 'You march behind your flag with a swimmer on either side. Whatever happens in New York, you went.' },
+      { label: 'Skip it', detail: 'Protect the major.',
+        fx: { fatigue: -14, fame: -6, form: 0.02 },
+        outcome: 'The federation is unhappy in public and understanding in private. You arrive fresh and it shows.' }
+    ] },
+  { id: 'documentary', stages: ['elite'], title: 'A camera in the corridor',
+    text: 'A streaming service wants a full season of access — the practice courts, the team meetings, the ten minutes after you lose.',
+    choices: [
+      { label: 'Full access', detail: 'Let them film everything.',
+        fx: { cash: 2200000, fame: 20, attrs: { mental: -1 } },
+        outcome: 'It is very good television. There is footage of the worst night of your career and you agreed to it.' },
+      { label: 'Matches only', detail: 'Nothing behind the door.',
+        fx: { cash: 700000, fame: 8 },
+        outcome: 'They make something decent and slightly bloodless. Your locker room stays yours.' }
+    ] },
+  { id: 'burnout', stages: ['elite', 'contender'], title: 'Empty',
+    text: 'You won last week and felt nothing at all. You have played thirty-one weeks this year and the thought of the Asian swing makes you want to lie down.',
+    choices: [
+      { label: 'Pull out of the swing', detail: 'Go home for a month.',
+        fx: { fatigue: -35, fame: -4, attrs: { mental: 3 } },
+        outcome: 'You do not touch a racquet for eighteen days. You come back wanting it, which had stopped being true.' },
+      { label: 'Push through', detail: 'Finish the year as planned.',
+        fx: { fatigue: 22, form: -0.03, attrs: { mental: -1 } },
+        outcome: 'You get the points and end the year hollow. Something about the sport goes quiet for a while.' }
+    ] },
+
+  /* ---------------- veteran ---------------- */
+  { id: 'the-body', stages: ['veteran'], title: 'What the specialist says',
+    text: 'The scan is not catastrophic and it is not good. His recommendation is twelve events a year instead of twenty-two, and he says it in the tone of someone who has had this conversation before.',
+    choices: [
+      { label: 'Cut the schedule', detail: 'Majors and the biggest events only.',
+        fx: { fatigue: -30, fame: -3, attrs: { stamina: 1, mental: 2 } },
+        outcome: 'You rank lower and arrive at every major able to play five sets. It buys you three more years.' },
+      { label: 'Keep the full calendar', detail: 'Play while you still can.',
+        fx: { fatigue: 18, attrs: { stamina: -2, movement: -1 } },
+        outcome: 'You get a full last chapter instead of a careful one, and you pay for it in the mornings.' }
+    ] },
+  { id: 'mentoring', stages: ['veteran', 'elite'], title: 'The kid on the practice court',
+    text: 'An eighteen-year-old from your own country has been hitting with you all week. He asks, badly and directly, whether you would keep doing it.',
+    choices: [
+      { label: 'Take him on', detail: 'Hit with him, travel with him.',
+        fx: { fame: 4, attrs: { mental: 3, net: 1 } },
+        outcome: 'Explaining it out loud makes you better at it. He beats you in two years and thanks you at the net.' },
+      { label: 'Stay focused', detail: 'You have your own season to play.',
+        fx: { form: 0.02 },
+        outcome: 'The right call for your ranking. You watch his first main draw on a phone in an airport.' }
+    ] },
+  { id: 'commentary', stages: ['veteran'], title: 'The booth',
+    text: 'A broadcaster offers you a commentary contract starting whenever you want it. It is a soft landing and everyone can see it.',
+    choices: [
+      { label: 'Sign for after', detail: 'Take it, starting the day you retire.',
+        fx: { cash: 900000, fame: 6, attrs: { mental: 2 } },
+        outcome: 'Knowing what happens next makes the last two years lighter rather than shorter.' },
+      { label: 'Not yet', detail: 'Do not plan the ending.',
+        fx: { attrs: { mental: 1 } },
+        outcome: 'You are still a tennis player and not a man deciding when to stop being one.' }
+    ] },
+  { id: 'one-more-year', stages: ['veteran'], title: 'One more year?',
+    text: 'Your team, your family and your body all have an opinion, and none of them agree. There is a version of this where you stop at the end of the season.',
+    choices: [
+      { label: 'Commit to another', detail: 'Full pre-season, full schedule.',
+        fx: { fatigue: 10, fame: 3, attrs: { mental: 2, stamina: 1 } },
+        outcome: 'Deciding is the whole thing. You play the next twelve months lighter than the last twelve.' },
+      { label: 'Play it week to week', detail: 'Decide nothing, enter everything.',
+        fx: { form: -0.02, attrs: { mental: -1 } },
+        outcome: 'The question follows you into every press conference and every changeover for a year.' }
+    ] },
+
+  /* ---------------- any stage ---------------- */
+  { id: 'frame-change', stages: ['grinder', 'regular', 'contender'], title: 'A heavier frame',
+    text: 'Your stringer thinks you are under-gunned against the top guys and wants you in something heavier. It will feel wrong for months.',
+    choices: [
+      { label: 'Make the change', detail: 'Wear the bad months.',
+        fx: { form: -0.03, attrs: { serve: 2, forehand: 1 } },
+        outcome: 'Awful until March, then the serve starts arriving somewhere it never used to.' },
+      { label: 'Stay as you are', detail: 'You know what you have.',
+        fx: { form: 0.02 },
+        outcome: 'No disruption, no upside. You keep losing the same way to the same players.' }
+    ] },
+  { id: 'the-approach', stages: ['grinder', 'regular'], title: 'A number you did not save',
+    text: 'A man you half-recognise from the players’ hotel asks, very casually, what it would take for a first set to go a certain way.',
+    choices: [
+      { label: 'Report it', detail: 'Integrity unit, tonight, in writing.',
+        fx: { fame: 3, attrs: { mental: 3 } },
+        outcome: 'A long evening of statements. Two years later you read that he was banned from every tour.' },
+      { label: 'Walk away', detail: 'Say nothing to anyone.',
+        fx: { attrs: { mental: -1 } },
+        outcome: 'You never see him again and you think about the players who did not say no.' }
+    ] },
+  { id: 'travel-chaos', stages: ['rookie', 'grinder', 'regular', 'contender', 'elite', 'veteran'], title: 'Thirty-one hours',
+    text: 'A cancellation, a rerouting and a lost racquet bag. You land four hours before your first-round match with borrowed frames.',
+    choices: [
+      { label: 'Ask for a delay', detail: 'Referee might move you to the night session.',
+        fx: { fatigue: 6, form: -0.01 },
+        outcome: 'They move you. You sleep two hours in the locker room and it is nearly enough.' },
+      { label: 'Play on borrowed frames', detail: 'Wrong tension, right attitude.',
+        fx: { fatigue: 12, attrs: { mental: 2 } },
+        outcome: 'You win in three ugly sets and never complain about equipment again.' }
+    ] },
+  { id: 'the-letter', stages: ['regular', 'contender', 'elite', 'veteran'], title: 'A letter forwarded by the tour',
+    text: 'A boy in a country you have never played in has written to say he started playing because of a match of yours he watched on a phone.',
+    choices: [
+      { label: 'Write back properly', detail: 'By hand, with a signed shirt.',
+        fx: { fame: 2, attrs: { mental: 2 } },
+        outcome: 'He writes again every year. You keep all of them in the same drawer.' },
+      { label: 'Have the team handle it', detail: 'A standard reply and a signed card.',
+        fx: { fame: 1 },
+        outcome: 'He gets something in the post with your name on it, which is more than most people get.' }
+    ] }
 ];
 
 if (typeof module !== 'undefined') {
   module.exports = { ATTRS, ATTR_KEYS, SURFACES, TOUR_RAW, POOL_RAW, PTS, PRIZE_BY_CAT, PRIZE_DEFAULT,
     CALENDAR, ROUND_NAMES_32, COUNTRIES, FIRST_NAMES, LAST_NAMES, LIFESTYLE_CATALOG, LIFESTYLE_RESALE_PCT, TRIVIA,
-    ERAS, eraById, ROOKIE_ROUTES };
+    ERAS, eraById, ROOKIE_ROUTES, LIFE_STAGES, stageFor, LIFE_EVENTS };
 }

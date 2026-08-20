@@ -570,6 +570,99 @@ button,input,select{font:inherit;color:inherit}
 .reveal-rookie b{display:block;font-size:15px}
 .reveal-rookie span:not(.rr-year){display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
 
+/* ---------- the life: stage track ---------- */
+.stage-track{
+  display:flex;flex-wrap:wrap;align-items:center;gap:0;
+  list-style:none;margin:10px 0 0;padding:0;
+}
+.stage-step{
+  display:flex;align-items:center;gap:6px;
+  padding-right:14px;margin-right:2px;position:relative;
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+}
+.stage-step:not(:last-child)::after{
+  content:"";width:10px;height:1px;background:var(--line);
+  position:absolute;right:2px;top:50%;
+}
+.stage-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:transparent;border:1px solid var(--line);flex:none;
+}
+.stage-step.done .stage-dot{background:var(--line);border-color:var(--line)}
+.stage-step.done{color:var(--muted)}
+.stage-step.here .stage-dot{
+  background:var(--acc);border-color:var(--acc);
+  box-shadow:0 0 10px rgba(212,255,63,.55);
+}
+.stage-step.here{color:var(--acc);font-weight:600}
+.stage-blurb{color:var(--muted);font-size:13.5px;margin:12px 0 20px}
+
+/* ---------- the life: decision card ---------- */
+.life-panel{max-width:760px;margin:0 auto}
+.life-stage-tag{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--acc);margin-bottom:6px;
+}
+.life-text{
+  color:var(--muted);font-size:15.5px;line-height:1.65;
+  margin:0 0 22px;max-width:62ch;
+}
+.life-choices{display:grid;gap:10px}
+.life-choice{
+  display:block;width:100%;text-align:left;cursor:pointer;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 16px;color:inherit;font:inherit;
+  transition:border-color .15s,transform .15s,background .15s;
+}
+.life-choice:hover:not(:disabled){border-color:var(--acc);transform:translateY(-2px);background:#1b2a36}
+.life-choice:disabled{opacity:.42;cursor:not-allowed}
+.lc-label{
+  display:block;font-family:var(--font-cond);font-size:20px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.lc-detail{display:block;color:var(--muted);font-size:13.5px;line-height:1.5;margin:3px 0 10px}
+.lc-fx{display:flex;flex-wrap:wrap;gap:6px}
+.lc-fx .fx,.life-fx .fx{
+  display:inline-block;font-size:11.5px;letter-spacing:.04em;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:999px;
+  padding:3px 10px;color:var(--muted);
+}
+.lc-fx .fx b,.life-fx .fx b{font-weight:600}
+.lc-fx .fx.up,.life-fx .fx.up{border-color:rgba(212,255,63,.35)}
+.lc-fx .fx.up b,.life-fx .fx.up b{color:var(--acc)}
+.lc-fx .fx.down,.life-fx .fx.down{border-color:rgba(248,113,113,.35)}
+.lc-fx .fx.down b,.life-fx .fx.down b{color:var(--bad)}
+.lc-locked{
+  display:block;margin-top:8px;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--bad);
+}
+.life-outcome{border-top:1px solid var(--line);padding-top:20px;margin-top:4px}
+.life-outcome p{color:var(--txt);font-size:16px;line-height:1.65;margin:0 0 14px;max-width:62ch}
+.life-fx{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+
+/* ---------- the life: log ---------- */
+.hh-stage{margin-top:8px}
+.ll-stats{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 22px}
+.ll-head{
+  font-family:var(--font-cond);font-size:17px;text-transform:uppercase;
+  letter-spacing:.08em;margin:0 0 10px;color:var(--txt);
+}
+.ll-list{list-style:none;margin:0 0 24px;padding:0;display:grid;gap:8px}
+.ll-entry,.ll-honour{
+  display:flex;gap:14px;align-items:flex-start;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:12px 14px;
+}
+.ll-year{
+  font-family:var(--font-cond);font-size:18px;font-weight:700;color:var(--acc);
+  flex:none;min-width:46px;line-height:1.3;
+}
+.ll-entry b{display:block;font-size:14.5px;margin-bottom:2px}
+.ll-choice{display:block;font-size:12.5px;color:var(--acc);margin-bottom:4px}
+.ll-outcome{display:block;font-size:13px;color:var(--muted);line-height:1.55}
+.ll-honour span:not(.ll-year){font-size:14px;color:var(--txt);padding-top:2px}
+.ll-empty{color:var(--dim);font-size:14px}
+
 /* ---------- crawlable site footer ---------- */
 .site-foot{
   border-top:1px solid var(--line);

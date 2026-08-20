@@ -65,10 +65,10 @@
         </div>
         <div class="rule">
           <span class="rule-n">03</span>
-          <h3>Then pick your era and play</h3>
-          <p>Spin for the rookie year you turn pro into — 1983 through to now — and choose your
-             route onto tour. Four Grand Slams, nine Masters 1000s, qualifying if you're ranked
-             too low, points that roll off 52 weeks later, injuries if you flog yourself.</p>
+          <h3>Then live the whole career</h3>
+          <p>Spin for the rookie year you turn pro into — 1983 through to now — then play it out.
+             Grand Slams, Masters 1000s, qualifying if you're ranked too low, and the life
+             between the matches: agents, coaches, contracts, your body, your family.</p>
         </div>
       </div>
       <p class="footnote">Unofficial fan project. Ratings are opinion, not endorsement.</p>
@@ -244,6 +244,35 @@
     </div>
   </section>
 
+  <!-- ================= LIFE EVENT ================= -->
+  <section class="screen" id="screen-life">
+    <div class="panel narrow life-panel">
+      <div class="life-stage-tag" id="life-stage-tag"></div>
+      <h2 class="screen-title" id="life-title">—</h2>
+      <p class="life-text" id="life-text"></p>
+      <div class="life-choices" id="life-choices"></div>
+      <div class="life-outcome" id="life-outcome" hidden>
+        <p id="life-outcome-text"></p>
+        <div class="life-fx" id="life-fx"></div>
+        <div class="row-end">
+          <button class="btn btn-primary" id="btn-life-done">Back to the tour</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LIFE SO FAR ================= -->
+  <section class="screen" id="screen-lifelog">
+    <div class="panel life-panel">
+      <h2 class="screen-title">Your life so far</h2>
+      <div id="lifelog-track"></div>
+      <div id="lifelog-body"></div>
+      <div class="row-end">
+        <button class="btn btn-ghost" id="btn-lifelog-back">Back to the tour</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= EVENT ================= -->
   <section class="screen" id="screen-event">
     <header class="ev-header" id="ev-header"></header>
@@ -411,6 +440,14 @@
        model, so serve-bots really do prefer grass and grinders really do prefer clay. Matches are
        simulated point by point, ranking points sit in a 52-week rolling table, and you can either sim a
        match or play it yourself game by game, choosing how you serve and how you return.</p>
+    <p>Between the tournaments you live the rest of it. Your career moves through six stages —
+       Rookie, The Grind, Tour Regular, Contender, Elite and Veteran — and each one unlocks its
+       own decisions: the first cheque big enough to send home, the agent in the player lounge,
+       the coach who admits he has taken you as far as he can, the wrist that will not settle,
+       the apparel contract worth more than everything you have won. Every choice is permanent
+       and every one costs something. They build a fame rating that pays a real endorsement
+       cheque at the end of each season, and the whole record of what you chose is read back to
+       you when you retire.</p>
     <p>Off court there is a career to manage: prize money, fatigue and injury risk, a lifestyle economy
        where net worth buys a house, a car and a coaching team, and finally retirement with a legacy
        verdict on everything you won. Three save slots run side by side. There is also a local 2v2
@@ -424,6 +461,8 @@
       <li>Spin for your rookie year — the era you turn pro into — and pick one of three routes
           onto tour. Two respins if you don't like the season you land on.</li>
       <li>Play the calendar, climb the rankings, bank prize money, manage fatigue.</li>
+      <li>Answer the life that happens between tournaments — agents, coaches, contracts,
+          your body, your family. Every choice is permanent.</li>
       <li>Spend what you win on the Lifestyle screen: a house, a car and a coaching team.</li>
       <li>Retire when you're ready and read the verdict on your career.</li>
     </ol>

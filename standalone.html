@@ -596,6 +596,99 @@ button,input,select{font:inherit;color:inherit}
 .reveal-rookie b{display:block;font-size:15px}
 .reveal-rookie span:not(.rr-year){display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
 
+/* ---------- the life: stage track ---------- */
+.stage-track{
+  display:flex;flex-wrap:wrap;align-items:center;gap:0;
+  list-style:none;margin:10px 0 0;padding:0;
+}
+.stage-step{
+  display:flex;align-items:center;gap:6px;
+  padding-right:14px;margin-right:2px;position:relative;
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+}
+.stage-step:not(:last-child)::after{
+  content:"";width:10px;height:1px;background:var(--line);
+  position:absolute;right:2px;top:50%;
+}
+.stage-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:transparent;border:1px solid var(--line);flex:none;
+}
+.stage-step.done .stage-dot{background:var(--line);border-color:var(--line)}
+.stage-step.done{color:var(--muted)}
+.stage-step.here .stage-dot{
+  background:var(--acc);border-color:var(--acc);
+  box-shadow:0 0 10px rgba(212,255,63,.55);
+}
+.stage-step.here{color:var(--acc);font-weight:600}
+.stage-blurb{color:var(--muted);font-size:13.5px;margin:12px 0 20px}
+
+/* ---------- the life: decision card ---------- */
+.life-panel{max-width:760px;margin:0 auto}
+.life-stage-tag{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--acc);margin-bottom:6px;
+}
+.life-text{
+  color:var(--muted);font-size:15.5px;line-height:1.65;
+  margin:0 0 22px;max-width:62ch;
+}
+.life-choices{display:grid;gap:10px}
+.life-choice{
+  display:block;width:100%;text-align:left;cursor:pointer;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 16px;color:inherit;font:inherit;
+  transition:border-color .15s,transform .15s,background .15s;
+}
+.life-choice:hover:not(:disabled){border-color:var(--acc);transform:translateY(-2px);background:#1b2a36}
+.life-choice:disabled{opacity:.42;cursor:not-allowed}
+.lc-label{
+  display:block;font-family:var(--font-cond);font-size:20px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.lc-detail{display:block;color:var(--muted);font-size:13.5px;line-height:1.5;margin:3px 0 10px}
+.lc-fx{display:flex;flex-wrap:wrap;gap:6px}
+.lc-fx .fx,.life-fx .fx{
+  display:inline-block;font-size:11.5px;letter-spacing:.04em;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:999px;
+  padding:3px 10px;color:var(--muted);
+}
+.lc-fx .fx b,.life-fx .fx b{font-weight:600}
+.lc-fx .fx.up,.life-fx .fx.up{border-color:rgba(212,255,63,.35)}
+.lc-fx .fx.up b,.life-fx .fx.up b{color:var(--acc)}
+.lc-fx .fx.down,.life-fx .fx.down{border-color:rgba(248,113,113,.35)}
+.lc-fx .fx.down b,.life-fx .fx.down b{color:var(--bad)}
+.lc-locked{
+  display:block;margin-top:8px;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--bad);
+}
+.life-outcome{border-top:1px solid var(--line);padding-top:20px;margin-top:4px}
+.life-outcome p{color:var(--txt);font-size:16px;line-height:1.65;margin:0 0 14px;max-width:62ch}
+.life-fx{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+
+/* ---------- the life: log ---------- */
+.hh-stage{margin-top:8px}
+.ll-stats{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 22px}
+.ll-head{
+  font-family:var(--font-cond);font-size:17px;text-transform:uppercase;
+  letter-spacing:.08em;margin:0 0 10px;color:var(--txt);
+}
+.ll-list{list-style:none;margin:0 0 24px;padding:0;display:grid;gap:8px}
+.ll-entry,.ll-honour{
+  display:flex;gap:14px;align-items:flex-start;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:12px 14px;
+}
+.ll-year{
+  font-family:var(--font-cond);font-size:18px;font-weight:700;color:var(--acc);
+  flex:none;min-width:46px;line-height:1.3;
+}
+.ll-entry b{display:block;font-size:14.5px;margin-bottom:2px}
+.ll-choice{display:block;font-size:12.5px;color:var(--acc);margin-bottom:4px}
+.ll-outcome{display:block;font-size:13px;color:var(--muted);line-height:1.55}
+.ll-honour span:not(.ll-year){font-size:14px;color:var(--txt);padding-top:2px}
+.ll-empty{color:var(--dim);font-size:14px}
+
 /* ---------- crawlable site footer ---------- */
 .site-foot{
   border-top:1px solid var(--line);
@@ -669,10 +762,10 @@ button,input,select{font:inherit;color:inherit}
         </div>
         <div class="rule">
           <span class="rule-n">03</span>
-          <h3>Then pick your era and play</h3>
-          <p>Spin for the rookie year you turn pro into — 1983 through to now — and choose your
-             route onto tour. Four Grand Slams, nine Masters 1000s, qualifying if you're ranked
-             too low, points that roll off 52 weeks later, injuries if you flog yourself.</p>
+          <h3>Then live the whole career</h3>
+          <p>Spin for the rookie year you turn pro into — 1983 through to now — then play it out.
+             Grand Slams, Masters 1000s, qualifying if you're ranked too low, and the life
+             between the matches: agents, coaches, contracts, your body, your family.</p>
         </div>
       </div>
       <p class="footnote">Unofficial fan project. Ratings are opinion, not endorsement.</p>
@@ -832,6 +925,35 @@ button,input,select{font:inherit;color:inherit}
           <div class="panel-head"><h3>Tour wire</h3></div>
           <ul class="news" id="news-list"></ul>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LIFE EVENT ================= -->
+  <section class="screen" id="screen-life">
+    <div class="panel narrow life-panel">
+      <div class="life-stage-tag" id="life-stage-tag"></div>
+      <h2 class="screen-title" id="life-title">—</h2>
+      <p class="life-text" id="life-text"></p>
+      <div class="life-choices" id="life-choices"></div>
+      <div class="life-outcome" id="life-outcome" hidden>
+        <p id="life-outcome-text"></p>
+        <div class="life-fx" id="life-fx"></div>
+        <div class="row-end">
+          <button class="btn btn-primary" id="btn-life-done">Back to the tour</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LIFE SO FAR ================= -->
+  <section class="screen" id="screen-lifelog">
+    <div class="panel life-panel">
+      <h2 class="screen-title">Your life so far</h2>
+      <div id="lifelog-track"></div>
+      <div id="lifelog-body"></div>
+      <div class="row-end">
+        <button class="btn btn-ghost" id="btn-lifelog-back">Back to the tour</button>
       </div>
     </div>
   </section>
@@ -1003,6 +1125,14 @@ button,input,select{font:inherit;color:inherit}
        model, so serve-bots really do prefer grass and grinders really do prefer clay. Matches are
        simulated point by point, ranking points sit in a 52-week rolling table, and you can either sim a
        match or play it yourself game by game, choosing how you serve and how you return.</p>
+    <p>Between the tournaments you live the rest of it. Your career moves through six stages —
+       Rookie, The Grind, Tour Regular, Contender, Elite and Veteran — and each one unlocks its
+       own decisions: the first cheque big enough to send home, the agent in the player lounge,
+       the coach who admits he has taken you as far as he can, the wrist that will not settle,
+       the apparel contract worth more than everything you have won. Every choice is permanent
+       and every one costs something. They build a fame rating that pays a real endorsement
+       cheque at the end of each season, and the whole record of what you chose is read back to
+       you when you retire.</p>
     <p>Off court there is a career to manage: prize money, fatigue and injury risk, a lifestyle economy
        where net worth buys a house, a car and a coaching team, and finally retirement with a legacy
        verdict on everything you won. Three save slots run side by side. There is also a local 2v2
@@ -1016,6 +1146,8 @@ button,input,select{font:inherit;color:inherit}
       <li>Spin for your rookie year — the era you turn pro into — and pick one of three routes
           onto tour. Two respins if you don't like the season you land on.</li>
       <li>Play the calendar, climb the rankings, bank prize money, manage fatigue.</li>
+      <li>Answer the life that happens between tournaments — agents, coaches, contracts,
+          your body, your family. Every choice is permanent.</li>
       <li>Spend what you win on the Lifestyle screen: a house, a car and a coaching team.</li>
       <li>Retire when you're ready and read the verdict on your career.</li>
     </ol>
@@ -1497,34 +1629,394 @@ function eraById(id) { return ERAS.find(e => e.id === id) || ERAS[ERAS.length - 
 const ROOKIE_ROUTES = [
   { id: 'junior-slam', name: 'Junior Slam Champion',
     blurb: 'You won a junior major and the tour already knows your name. The expectation arrives with it.',
-    pts: 260, cash: 120000, wildcards: 3, bonus: { mental: 2 } },
+    pts: 260, cash: 120000, wildcards: 3, fame: 12, bonus: { mental: 2 } },
   { id: 'wildcard', name: 'Home Wildcard',
     blurb: 'Your federation handed you a main-draw wildcard at the home slam. One good week and you never have to qualify again.',
-    pts: 90, cash: 200000, wildcards: 4, bonus: { serve: 2 } },
+    pts: 90, cash: 200000, wildcards: 4, fame: 8, bonus: { serve: 2 } },
   { id: 'qualifier', name: 'Qualifying Grinder',
     blurb: 'No hype, no help, three matches every week just to reach the first round. You will be fit, at least.',
-    pts: 25, cash: 30000, wildcards: 0, bonus: { stamina: 4 } },
+    pts: 25, cash: 30000, wildcards: 0, fame: 1, bonus: { stamina: 4 } },
   { id: 'academy', name: 'Academy Prodigy',
     blurb: 'A decade inside a famous academy, funded by people expecting a return. The strokes are finished; the results are not.',
-    pts: 170, cash: 380000, wildcards: 2, bonus: { forehand: 2, backhand: 2 } },
+    pts: 170, cash: 380000, wildcards: 2, fame: 6, bonus: { forehand: 2, backhand: 2 } },
   { id: 'challenger', name: 'Challenger Champion',
     blurb: 'You cleaned up on the second tier all year. Nobody watched, but the ranking points are real.',
-    pts: 320, cash: 80000, wildcards: 1, bonus: { movement: 2 } },
+    pts: 320, cash: 80000, wildcards: 1, fame: 4, bonus: { movement: 2 } },
   { id: 'college', name: 'College Standout',
     blurb: 'Four years of team tennis and a degree to fall back on. You arrive late but you arrive knowing how to compete.',
-    pts: 70, cash: 110000, wildcards: 2, bonus: { mental: 3 } },
+    pts: 70, cash: 110000, wildcards: 2, fame: 3, bonus: { mental: 3 } },
   { id: 'tour-family', name: 'Tour Family',
     blurb: 'A parent played. The travel, the coaches and the contacts were all sorted before you hit a ball for money.',
-    pts: 110, cash: 850000, wildcards: 3, bonus: { net: 1, mental: 1 } },
+    pts: 110, cash: 850000, wildcards: 3, fame: 9, bonus: { net: 1, mental: 1 } },
   { id: 'olympic', name: 'Olympic Medallist',
     blurb: 'A medal before a ranking. Sponsors found you first and the tour is still working out whether it was a fluke.',
-    pts: 200, cash: 170000, wildcards: 2, bonus: { ret: 2 } },
+    pts: 200, cash: 170000, wildcards: 2, fame: 15, bonus: { ret: 2 } },
   { id: 'late-bloomer', name: 'Late Bloomer',
     blurb: 'You were nowhere at eighteen. Something clicked, and now the weakest part of your game is no longer weak.',
-    pts: 45, cash: 45000, wildcards: 1, bonus: { lowest: 5 } },
+    pts: 45, cash: 45000, wildcards: 1, fame: 2, bonus: { lowest: 5 } },
   { id: 'unknown', name: 'Complete Unknown',
     blurb: 'No federation, no academy, no backer. If you get anywhere it will be entirely on the racquet.',
-    pts: 0, cash: 15000, wildcards: 0, bonus: { all: 1 } }
+    pts: 0, cash: 15000, wildcards: 0, fame: 0, bonus: { all: 1 } }
+];
+
+/* --- Life stages ----------------------------------------------------------
+   The rung of the ladder you're standing on. Stages gate which life events
+   can reach you, and the hub shows the whole track so you can see where the
+   career sits. Order matters: `stageFor` walks this list and takes the first
+   stage whose test passes, so the specific cases sit above the general ones.
+------------------------------------------------------------------------- */
+const LIFE_STAGES = [
+  { id: 'rookie',    name: 'Rookie',       blurb: 'First season on tour. Nobody knows your name yet.' },
+  { id: 'grinder',   name: 'The Grind',    blurb: 'Qualifying draws, cheap flights, and results that will not come.' },
+  { id: 'regular',   name: 'Tour Regular', blurb: 'Into main draws on ranking alone. A living, if not yet a career.' },
+  { id: 'contender', name: 'Contender',    blurb: 'Seeded, dangerous, and expected to go deep.' },
+  { id: 'elite',     name: 'Elite',        blurb: 'Top of the game. Everything you do is now news.' },
+  { id: 'veteran',   name: 'Veteran',      blurb: 'The body is negotiating. The head knows more than it ever did.' }
+];
+
+function stageFor(ctx) {
+  if (ctx.age >= 32) return 'veteran';
+  if (ctx.seasons === 0) return 'rookie';
+  if (ctx.slams >= 1 || ctx.rank <= 5) return 'elite';
+  if (ctx.rank <= 25) return 'contender';
+  if (ctx.rank <= 70) return 'regular';
+  return 'grinder';
+}
+
+/* --- Life events ----------------------------------------------------------
+   The bit between the matches. One can land after any tournament; each is
+   drawn from the pool your current stage unlocks and never repeats.
+
+   Effects a choice can carry:
+     cash    money in or out (a choice you cannot afford is offered greyed out)
+     fame    0-100, drives the endorsement cheque paid at the end of each season
+     fatigue 0-100, straight onto the fatigue meter (negative is rest)
+     form    the 0.92-1.08 form multiplier, nudged
+     attrs   permanent rating changes
+------------------------------------------------------------------------- */
+const LIFE_EVENTS = [
+  /* ---------------- rookie ---------------- */
+  { id: 'first-cheque', stages: ['rookie'], title: 'The first real cheque',
+    text: 'Your first main-draw prize money has cleared. It is more than either of your parents made last year, and they spent a decade driving you to courts at six in the morning.',
+    choices: [
+      { label: 'Send it home', detail: 'They earned it as much as you did.',
+        fx: { cash: -40000, fame: 2, attrs: { mental: 2 } },
+        outcome: 'Your mum cries down the phone. Whatever happens now, that part is already paid back.' },
+      { label: 'Bank every cent', detail: 'A season on tour is expensive and nobody is funding you.',
+        fx: { cash: 25000, attrs: { mental: 1 } },
+        outcome: 'Unglamorous, and exactly right. You can now afford a full season without begging anyone.' },
+      { label: 'Buy proper kit', detail: 'New frames, strung right, and shoes that fit.',
+        fx: { cash: -18000, attrs: { serve: 1, movement: 1 } },
+        outcome: 'The difference is small and instant. You had been playing with the wrong tension for a year.' }
+    ] },
+  { id: 'school-or-tour', stages: ['rookie'], title: 'Exams or entries',
+    text: 'Your final school exams fall in the same fortnight as two events you are entered in. You cannot do both.',
+    choices: [
+      { label: 'Sit the exams', detail: 'Something to fall back on.',
+        fx: { fatigue: 10, attrs: { mental: 3 } },
+        outcome: 'You pass. It changes nothing about your tennis and everything about how you sleep.' },
+      { label: 'Play the events', detail: 'The ranking will not wait.',
+        fx: { fame: 1, attrs: { ret: 1, movement: 1 } },
+        outcome: 'Two wins and a hard loss. You are a tennis player now, formally, with nothing behind you.' }
+    ] },
+  { id: 'first-agent', stages: ['rookie', 'grinder'], title: 'A man with a card',
+    text: 'An agent from a large management group finds you in the player lounge. He has watched two of your matches and knows your junior record by heart.',
+    choices: [
+      { label: 'Sign with the agency', detail: 'Doors open, but they take their cut.',
+        fx: { cash: 60000, fame: 6 },
+        outcome: 'A boot deal lands inside a month. So does a schedule you did not entirely agree to.' },
+      { label: 'Stay independent', detail: 'Slower, but nobody owns a piece of you.',
+        fx: { attrs: { mental: 2 } },
+        outcome: 'He is gracious about it. You book your own flights for another two years and never regret it.' }
+    ] },
+  { id: 'homesick', stages: ['rookie'], title: 'Eleven weeks away',
+    text: 'You have been on the road since February. Tonight is another hotel room in another city where you know nobody.',
+    choices: [
+      { label: 'Fly a parent out', detail: 'Expensive, and worth it.',
+        fx: { cash: -12000, fatigue: -12, attrs: { mental: 2 } },
+        outcome: 'They stay a fortnight, cook once, and say almost nothing useful. You play free for a month.' },
+      { label: 'Put your head down', detail: 'Everyone does this. Get on with it.',
+        fx: { fatigue: 8, attrs: { mental: 1 } },
+        outcome: 'You get through it. Something hardens that you will be grateful for later and cannot describe now.' }
+    ] },
+
+  /* ---------------- grinder ---------------- */
+  { id: 'challenger-grind', stages: ['grinder'], title: 'Six weeks, six challengers',
+    text: 'The only way up is a block of second-tier events back to back — night buses, shared rooms, no physio.',
+    choices: [
+      { label: 'Play all six', detail: 'Points are points.',
+        fx: { fatigue: 26, fame: 2, attrs: { stamina: 2, mental: 1 } },
+        outcome: 'You come out of it exhausted, ranked considerably higher, and able to play tired without panicking.' },
+      { label: 'Play three and train', detail: 'Half the points, half the wear.',
+        fx: { fatigue: 8, attrs: { forehand: 1, backhand: 1 } },
+        outcome: 'The block in the middle is the most useful fortnight of practice you have had in two years.' }
+    ] },
+  { id: 'the-backer', stages: ['grinder', 'regular'], title: 'An offer of funding',
+    text: 'A businessman who watches you at your home club offers to fund a full season — flights, coach, physio — for a slice of your prize money for the next five years.',
+    choices: [
+      { label: 'Take the money', detail: 'A proper season, right now.',
+        fx: { cash: 220000, fatigue: -10, attrs: { mental: -1 } },
+        outcome: 'You travel properly for the first time. The percentage will follow you around for years, and you knew that.' },
+      { label: 'Turn it down', detail: 'Keep every cent you win.',
+        fx: { attrs: { mental: 2 } },
+        outcome: 'Harder, cheaper, yours. You fly economy with a bag of your own strings.' }
+    ] },
+  { id: 'coach-split', stages: ['grinder', 'regular'], title: 'The coach who got you here',
+    text: 'The man who has coached you since you were nine says, plainly and without self-pity, that he has taken you as far as he can.',
+    choices: [
+      { label: 'Move on', detail: 'He is right, and he knows it.',
+        fx: { cash: -60000, attrs: { forehand: 1, backhand: 1, ret: 1 } },
+        outcome: 'The new voice fixes a return position you have had wrong for a decade. You still call him after finals.' },
+      { label: 'Keep him', detail: 'Loyalty is worth something too.',
+        fx: { attrs: { mental: 3 } },
+        outcome: 'Your technique stops improving. Your head never once wobbles in a tight third set.' }
+    ] },
+  { id: 'wrong-draw', stages: ['grinder', 'regular'], title: 'A brutal draw',
+    text: 'You have drawn a seed in the first round for the fourth event running. The ranking says you deserve it; the schedule says you have no chance to build anything.',
+    choices: [
+      { label: 'Study the tape', detail: 'Two days of it, shot by shot.',
+        fx: { fatigue: 6, attrs: { ret: 2 } },
+        outcome: 'You find a pattern on the second serve nobody had told you about. You lose in three, closely.' },
+      { label: 'Forget the seeding', detail: 'Play your game and see.',
+        fx: { form: 0.02, attrs: { mental: 1 } },
+        outcome: 'It goes badly and you do not care. Something about that turns out to be useful.' }
+    ] },
+
+  /* ---------------- regular ---------------- */
+  { id: 'first-endorsement', stages: ['regular', 'contender'], title: 'A racquet contract',
+    text: 'A manufacturer wants you in their frames. The money is real. The frame is not the one you have used since you were fourteen.',
+    choices: [
+      { label: 'Sign and switch', detail: 'Take the deal, learn the frame.',
+        fx: { cash: 400000, fame: 5, attrs: { forehand: -1, backhand: -1 } },
+        outcome: 'Three bad months, then it settles. The cheque clears either way.' },
+      { label: 'Sign, keep your frame', detail: 'They paint your old frame in their colours. Less money.',
+        fx: { cash: 150000, fame: 3 },
+        outcome: 'A common arrangement, quietly done. Nobody watching at home can tell.' },
+      { label: 'Walk away', detail: 'Nothing changes about your equipment.',
+        fx: { attrs: { mental: 1 } },
+        outcome: 'Your agent is furious. Your forehand is exactly where you left it.' }
+    ] },
+  { id: 'fitness-overhaul', stages: ['regular', 'contender'], title: 'A brutal off-court block',
+    text: 'A fitness coach has looked at your data and told you the truth: you lose matches in the fourth set because you are not fit enough, not because you are not good enough.',
+    choices: [
+      { label: 'Do the whole block', detail: 'Six weeks of work you will hate.',
+        fx: { cash: -90000, fatigue: 20, attrs: { stamina: 4, movement: 2 } },
+        outcome: 'You have never felt worse. Next February you win a five-setter you would have lost in straight sets.' },
+      { label: 'A lighter version', detail: 'Keep some tennis in the schedule.',
+        fx: { cash: -35000, fatigue: 8, attrs: { stamina: 2 } },
+        outcome: 'A sensible compromise that makes you slightly better at everything and dramatically better at nothing.' }
+    ] },
+  { id: 'nagging-wrist', stages: ['regular', 'contender', 'elite'], title: 'The wrist',
+    text: 'It has been sore for six weeks. The scan shows nothing structural, which the doctor says is good news and does not feel like it.',
+    choices: [
+      { label: 'Take a month off', detail: 'Rest it properly, lose the points.',
+        fx: { fatigue: -30, attrs: { mental: 1 } },
+        outcome: 'The ranking slides. The wrist stops talking to you and never brings it up again.' },
+      { label: 'Play through it', detail: 'Tape it and keep entering.',
+        fx: { fatigue: 16, form: -0.02, attrs: { forehand: -1 } },
+        outcome: 'You get the points. The wrist becomes a thing you manage rather than a thing you fixed.' }
+    ] },
+  { id: 'tabloid', stages: ['regular', 'contender', 'elite'], title: 'A photo you did not pose for',
+    text: 'A picture of you leaving a bar at 2am the night before a first round is on the back page. You lost that match.',
+    choices: [
+      { label: 'Own it publicly', detail: 'Say the obvious thing and move on.',
+        fx: { fame: 4, attrs: { mental: 2 } },
+        outcome: 'The story dies in a day. Players you have never spoken to tell you it was the right call.' },
+      { label: 'Say nothing', detail: 'Let it burn out on its own.',
+        fx: { fame: -2, attrs: { mental: 1 } },
+        outcome: 'It takes a fortnight instead of a day, and you learn who in your box talks to journalists.' }
+    ] },
+  { id: 'charity-exo', stages: ['regular', 'contender', 'elite'], title: 'A hospital exhibition',
+    text: 'A children’s hospital in your home city wants you for an afternoon. There is no fee and it falls in the middle of your only rest week.',
+    choices: [
+      { label: 'Go', detail: 'Give up the rest day.',
+        fx: { fatigue: 6, fame: 5, attrs: { mental: 2 } },
+        outcome: 'A nine-year-old with a drip in her arm returns your serve. You think about it before every final you ever play.' },
+      { label: 'Send kit instead', detail: 'Signed racquets and a video message.',
+        fx: { cash: -8000, fame: 1 },
+        outcome: 'Genuinely appreciated, and not the same thing, and you know it.' }
+    ] },
+
+  /* ---------------- contender ---------------- */
+  { id: 'super-coach', stages: ['contender', 'elite'], title: 'A former great calls',
+    text: 'Someone who won majors when you were a child wants to work with you. The fee is enormous and so is the demand: their schedule, their pre-season, their opinion on everything.',
+    choices: [
+      { label: 'Hire them', detail: 'Hand over the keys.',
+        fx: { cash: -800000, attrs: { mental: 3, ret: 2, net: 1 } },
+        outcome: 'They rebuild how you think about a match. You have never been coached this hard and it works.' },
+      { label: 'Consultancy only', detail: 'A fortnight before each major.',
+        fx: { cash: -220000, attrs: { mental: 1, ret: 1 } },
+        outcome: 'You get the good bits and keep your independence. They think you are wasting the opportunity.' },
+      { label: 'Decline', detail: 'Your team got you here.',
+        fx: { attrs: { mental: 1 } },
+        outcome: 'Your coach hears about the offer anyway. He never mentions it and works twice as hard.' }
+    ] },
+  { id: 'december-exos', stages: ['contender', 'elite'], title: 'The December money',
+    text: 'A promoter offers a fortnight of exhibitions across three countries in December. It is a serious amount of money for six matches that count for nothing.',
+    choices: [
+      { label: 'Play the tour', detail: 'Take the money, lose the pre-season.',
+        fx: { cash: 1200000, fatigue: 22, fame: 6, attrs: { stamina: -1 } },
+        outcome: 'You arrive in January rich and underdone. The Australian Open is not kind about it.' },
+      { label: 'Do the pre-season', detail: 'Six weeks of proper work instead.',
+        fx: { fatigue: -20, attrs: { stamina: 2, movement: 1 } },
+        outcome: 'Nobody pays you a cent for December. You start the season in the best shape of your life.' }
+    ] },
+  { id: 'the-rival', stages: ['contender', 'elite'], title: 'Words at the net',
+    text: 'You beat someone you have never liked, and the handshake was three seconds of something the cameras caught. A reporter asks you about it while you are still sweating.',
+    choices: [
+      { label: 'Fan the flames', detail: 'Say what you actually think.',
+        fx: { fame: 10, attrs: { mental: -1 } },
+        outcome: 'The rivalry sells out arenas for six years. It also lives in your head at 4–5 in the third.' },
+      { label: 'Defuse it', detail: 'Praise him and change the subject.',
+        fx: { fame: -1, attrs: { mental: 2 } },
+        outcome: 'The story dies. He sends a message that evening, and the next time you play it is only tennis.' }
+    ] },
+  { id: 'parents-house', stages: ['contender', 'elite'], title: 'The house on the hill',
+    text: 'Your parents still live in the house you grew up in, with the garage door you hit a thousand balls against. You can now buy them any house they want.',
+    choices: [
+      { label: 'Buy it for them', detail: 'They will refuse, then accept.',
+        fx: { cash: -1400000, fame: 3, attrs: { mental: 3 } },
+        outcome: 'Your father walks around it for an hour without speaking. It is the best money you ever spend.' },
+      { label: 'Pay off their mortgage', detail: 'Quieter, and what they actually asked for.',
+        fx: { cash: -320000, attrs: { mental: 2 } },
+        outcome: 'They stay in the house with the garage door. Everyone is happier this way.' }
+    ] },
+
+  /* ---------------- elite ---------------- */
+  { id: 'mega-deal', stages: ['elite'], title: 'An apparel contract',
+    text: 'The number in front of you is larger than everything you have won in your career. It comes with eighteen commercial days a year.',
+    choices: [
+      { label: 'Sign it', detail: 'Life-changing money, real obligations.',
+        fx: { cash: 9000000, fame: 18, fatigue: 14, attrs: { stamina: -1 } },
+        outcome: 'You are on a building in Tokyo. You are also on a plane far more often than your physio would like.' },
+      { label: 'Negotiate it down', detail: 'Half the money, half the days.',
+        fx: { cash: 4000000, fame: 9, fatigue: 4 },
+        outcome: 'Your agent calls it the most expensive lie-in in history. You win a major that year.' }
+    ] },
+  { id: 'foundation', stages: ['elite'], title: 'Start a foundation',
+    text: 'You want to put courts and coaching into the kind of place you came from. Doing it properly means money and, more expensively, your time.',
+    choices: [
+      { label: 'Fund it properly', detail: 'Endow it and show up.',
+        fx: { cash: -2600000, fame: 12, attrs: { mental: 3 } },
+        outcome: 'Four courts, two coaches and a minibus. Eleven years later one of those kids makes the top 100.' },
+      { label: 'Lend your name', detail: 'Others run it, you appear twice a year.',
+        fx: { cash: -400000, fame: 6, attrs: { mental: 1 } },
+        outcome: 'It does real good and you are honest with yourself about how much of it is yours.' }
+    ] },
+  { id: 'olympic-year', stages: ['elite', 'contender'], title: 'The Olympic question',
+    text: 'The Games fall three weeks before the last major of the year, on a different surface, on the other side of the world. Half the top ten are skipping it.',
+    choices: [
+      { label: 'Go', detail: 'Play for the flag.',
+        fx: { fatigue: 20, fame: 14, attrs: { mental: 2 } },
+        outcome: 'You march behind your flag with a swimmer on either side. Whatever happens in New York, you went.' },
+      { label: 'Skip it', detail: 'Protect the major.',
+        fx: { fatigue: -14, fame: -6, form: 0.02 },
+        outcome: 'The federation is unhappy in public and understanding in private. You arrive fresh and it shows.' }
+    ] },
+  { id: 'documentary', stages: ['elite'], title: 'A camera in the corridor',
+    text: 'A streaming service wants a full season of access — the practice courts, the team meetings, the ten minutes after you lose.',
+    choices: [
+      { label: 'Full access', detail: 'Let them film everything.',
+        fx: { cash: 2200000, fame: 20, attrs: { mental: -1 } },
+        outcome: 'It is very good television. There is footage of the worst night of your career and you agreed to it.' },
+      { label: 'Matches only', detail: 'Nothing behind the door.',
+        fx: { cash: 700000, fame: 8 },
+        outcome: 'They make something decent and slightly bloodless. Your locker room stays yours.' }
+    ] },
+  { id: 'burnout', stages: ['elite', 'contender'], title: 'Empty',
+    text: 'You won last week and felt nothing at all. You have played thirty-one weeks this year and the thought of the Asian swing makes you want to lie down.',
+    choices: [
+      { label: 'Pull out of the swing', detail: 'Go home for a month.',
+        fx: { fatigue: -35, fame: -4, attrs: { mental: 3 } },
+        outcome: 'You do not touch a racquet for eighteen days. You come back wanting it, which had stopped being true.' },
+      { label: 'Push through', detail: 'Finish the year as planned.',
+        fx: { fatigue: 22, form: -0.03, attrs: { mental: -1 } },
+        outcome: 'You get the points and end the year hollow. Something about the sport goes quiet for a while.' }
+    ] },
+
+  /* ---------------- veteran ---------------- */
+  { id: 'the-body', stages: ['veteran'], title: 'What the specialist says',
+    text: 'The scan is not catastrophic and it is not good. His recommendation is twelve events a year instead of twenty-two, and he says it in the tone of someone who has had this conversation before.',
+    choices: [
+      { label: 'Cut the schedule', detail: 'Majors and the biggest events only.',
+        fx: { fatigue: -30, fame: -3, attrs: { stamina: 1, mental: 2 } },
+        outcome: 'You rank lower and arrive at every major able to play five sets. It buys you three more years.' },
+      { label: 'Keep the full calendar', detail: 'Play while you still can.',
+        fx: { fatigue: 18, attrs: { stamina: -2, movement: -1 } },
+        outcome: 'You get a full last chapter instead of a careful one, and you pay for it in the mornings.' }
+    ] },
+  { id: 'mentoring', stages: ['veteran', 'elite'], title: 'The kid on the practice court',
+    text: 'An eighteen-year-old from your own country has been hitting with you all week. He asks, badly and directly, whether you would keep doing it.',
+    choices: [
+      { label: 'Take him on', detail: 'Hit with him, travel with him.',
+        fx: { fame: 4, attrs: { mental: 3, net: 1 } },
+        outcome: 'Explaining it out loud makes you better at it. He beats you in two years and thanks you at the net.' },
+      { label: 'Stay focused', detail: 'You have your own season to play.',
+        fx: { form: 0.02 },
+        outcome: 'The right call for your ranking. You watch his first main draw on a phone in an airport.' }
+    ] },
+  { id: 'commentary', stages: ['veteran'], title: 'The booth',
+    text: 'A broadcaster offers you a commentary contract starting whenever you want it. It is a soft landing and everyone can see it.',
+    choices: [
+      { label: 'Sign for after', detail: 'Take it, starting the day you retire.',
+        fx: { cash: 900000, fame: 6, attrs: { mental: 2 } },
+        outcome: 'Knowing what happens next makes the last two years lighter rather than shorter.' },
+      { label: 'Not yet', detail: 'Do not plan the ending.',
+        fx: { attrs: { mental: 1 } },
+        outcome: 'You are still a tennis player and not a man deciding when to stop being one.' }
+    ] },
+  { id: 'one-more-year', stages: ['veteran'], title: 'One more year?',
+    text: 'Your team, your family and your body all have an opinion, and none of them agree. There is a version of this where you stop at the end of the season.',
+    choices: [
+      { label: 'Commit to another', detail: 'Full pre-season, full schedule.',
+        fx: { fatigue: 10, fame: 3, attrs: { mental: 2, stamina: 1 } },
+        outcome: 'Deciding is the whole thing. You play the next twelve months lighter than the last twelve.' },
+      { label: 'Play it week to week', detail: 'Decide nothing, enter everything.',
+        fx: { form: -0.02, attrs: { mental: -1 } },
+        outcome: 'The question follows you into every press conference and every changeover for a year.' }
+    ] },
+
+  /* ---------------- any stage ---------------- */
+  { id: 'frame-change', stages: ['grinder', 'regular', 'contender'], title: 'A heavier frame',
+    text: 'Your stringer thinks you are under-gunned against the top guys and wants you in something heavier. It will feel wrong for months.',
+    choices: [
+      { label: 'Make the change', detail: 'Wear the bad months.',
+        fx: { form: -0.03, attrs: { serve: 2, forehand: 1 } },
+        outcome: 'Awful until March, then the serve starts arriving somewhere it never used to.' },
+      { label: 'Stay as you are', detail: 'You know what you have.',
+        fx: { form: 0.02 },
+        outcome: 'No disruption, no upside. You keep losing the same way to the same players.' }
+    ] },
+  { id: 'the-approach', stages: ['grinder', 'regular'], title: 'A number you did not save',
+    text: 'A man you half-recognise from the players’ hotel asks, very casually, what it would take for a first set to go a certain way.',
+    choices: [
+      { label: 'Report it', detail: 'Integrity unit, tonight, in writing.',
+        fx: { fame: 3, attrs: { mental: 3 } },
+        outcome: 'A long evening of statements. Two years later you read that he was banned from every tour.' },
+      { label: 'Walk away', detail: 'Say nothing to anyone.',
+        fx: { attrs: { mental: -1 } },
+        outcome: 'You never see him again and you think about the players who did not say no.' }
+    ] },
+  { id: 'travel-chaos', stages: ['rookie', 'grinder', 'regular', 'contender', 'elite', 'veteran'], title: 'Thirty-one hours',
+    text: 'A cancellation, a rerouting and a lost racquet bag. You land four hours before your first-round match with borrowed frames.',
+    choices: [
+      { label: 'Ask for a delay', detail: 'Referee might move you to the night session.',
+        fx: { fatigue: 6, form: -0.01 },
+        outcome: 'They move you. You sleep two hours in the locker room and it is nearly enough.' },
+      { label: 'Play on borrowed frames', detail: 'Wrong tension, right attitude.',
+        fx: { fatigue: 12, attrs: { mental: 2 } },
+        outcome: 'You win in three ugly sets and never complain about equipment again.' }
+    ] },
+  { id: 'the-letter', stages: ['regular', 'contender', 'elite', 'veteran'], title: 'A letter forwarded by the tour',
+    text: 'A boy in a country you have never played in has written to say he started playing because of a match of yours he watched on a phone.',
+    choices: [
+      { label: 'Write back properly', detail: 'By hand, with a signed shirt.',
+        fx: { fame: 2, attrs: { mental: 2 } },
+        outcome: 'He writes again every year. You keep all of them in the same drawer.' },
+      { label: 'Have the team handle it', detail: 'A standard reply and a signed card.',
+        fx: { fame: 1 },
+        outcome: 'He gets something in the post with your name on it, which is more than most people get.' }
+    ] }
 ];
 
 /* ============================================================================
@@ -2333,6 +2825,11 @@ function overall(p) {
    off-season, and the save file.
    ==========================================================================*/
 
+/* How often the life layer interrupts the tennis, and how much of it you can
+   live through in one season. Kept low deliberately — it is punctuation. */
+const LIFE_EVENT_CHANCE = 0.34;
+const LIFE_EVENTS_PER_SEASON = 3;
+
 const SAVE_PREFIX = 'baseline.career.slot';
 const SAVE_SLOTS = 3;
 function slotKey(slot) { return SAVE_PREFIX + slot + '.v1'; }
@@ -2480,6 +2977,12 @@ class Career {
     this.routeName = route ? route.name : null;
     // main-draw entries the route bought you — spent instead of qualifying
     this.wildcards = route ? (route.wildcards || 0) : 0;
+    // how well known you are, 0-100. Life events move it, titles move it, and
+    // it is what the end-of-season endorsement cheque is priced off.
+    this.fame = route ? (route.fame || 0) : 3;
+    // seen: life events already lived through, so none ever repeats
+    // pending: the event waiting to be answered, if any
+    this.life = { seen: [], log: [], thisSeason: 0, pending: null };
     this.year = opts.year || era.year;
     this.startYear = this.year;
     this.seasonsCompleted = 0;
@@ -2685,7 +3188,10 @@ class Career {
     champ.career.prize += money;
     const label = champ.isUser ? 'good' : 'info';
     this.say(`${champ.name} wins ${c.ev.name} (${c.ev.city}).`, label);
-    if (champ.isUser) this.honours.push({ year: this.year, text: `${c.ev.name} champion` });
+    if (champ.isUser) {
+      this.honours.push({ year: this.year, text: `${c.ev.name} champion` });
+      this.fame = clamp(this.fame + (c.ev.cat === 'gs' ? 9 : c.ev.cat === 'm1000' ? 4 : 2), 0, 100);
+    }
     const userWins = c.main.wins[this.user.id];
     if (userWins !== undefined) {
       const res = userWins >= c.main.totalRounds ? 'Champion' : c.main.roundName(userWins);
@@ -2756,11 +3262,29 @@ class Career {
       log: this.seasonLog.slice(),
       top10: table.slice(0, 10).map(r => ({ name: r.p.name, pts: r.pts, isUser: r.p.isUser }))
     };
-    if (no1.isUser) this.honours.push({ year: this.year, text: 'Year-end world No. 1' });
+    if (no1.isUser) {
+      this.honours.push({ year: this.year, text: 'Year-end world No. 1' });
+      this.fame = clamp(this.fame + 10, 0, 100);
+    }
+    // the year's endorsement cheque, priced off how well known you now are
+    const endorsements = this.endorsementIncome();
+    if (endorsements > 0) {
+      this.finances.seed = (this.finances.seed || 0) + endorsements;
+      this.say(`Endorsements paid ${Math.round(endorsements / 1000)}k for the year.`, 'good');
+    }
+    summary.fame = this.fame;
+    summary.endorsements = endorsements;
+    summary.stage = this.stageInfo().name;
     return summary;
   }
 
   newSeason(trainingSpend) {
+    // fame fades unless the results keep renewing it — a year outside the top
+    // 100 costs you far more of it than a year at the top
+    const earned = this.user.rank <= 5 ? 26 : this.user.rank <= 20 ? 16
+                 : this.user.rank <= 50 ? 8 : this.user.rank <= 100 ? 3 : 0;
+    this.fame = clamp(Math.round(this.fame * 0.88 + earned * 0.12), 0, 100);
+    this.life.thisSeason = 0;
     this.players.forEach(p => {
       p.prev = Object.assign({}, p.prev, p.res);
       p.res = {};
@@ -2791,6 +3315,74 @@ class Career {
     const bonus = teamTier != null ? (LIFESTYLE_CATALOG.team[teamTier].trainingBonus || 0) : 0;
     return base + bonus;
   }
+
+  /* --- the life ----------------------------------------------------------
+     Where the career sits on the ladder, and the events that reach you there.
+     Stage is derived rather than stored, so it tracks the career on its own
+     as the ranking and the birthdays move. */
+  stageContext() {
+    return {
+      age: this.user.age,
+      seasons: this.seasonsCompleted,
+      rank: this.user.rank || 999,
+      slams: this.user.career.slams || 0
+    };
+  }
+  stage() { return stageFor(this.stageContext()); }
+  stageInfo() { const id = this.stage(); return LIFE_STAGES.find(s => s.id === id) || LIFE_STAGES[0]; }
+
+  /* Which events could still reach you where you are now. */
+  eligibleLifeEvents() {
+    const st = this.stage();
+    return LIFE_EVENTS.filter(e => e.stages.indexOf(st) >= 0 && this.life.seen.indexOf(e.id) < 0);
+  }
+
+  /* Rolled after a tournament closes. Capped per season so the life layer
+     stays punctuation rather than the main text. */
+  rollLifeEvent() {
+    if (this.life.pending) return this.life.pending;
+    if (this.life.thisSeason >= LIFE_EVENTS_PER_SEASON) return null;
+    if (this.injuryWeeks > 0) return null;
+    if (rnd() > LIFE_EVENT_CHANCE) return null;
+    const pool = this.eligibleLifeEvents();
+    if (!pool.length) return null;
+    this.life.pending = pick(pool).id;
+    return this.life.pending;
+  }
+  pendingLifeEvent() {
+    return this.life.pending ? LIFE_EVENTS.find(e => e.id === this.life.pending) || null : null;
+  }
+  /* Can this choice be paid for? A cost you cannot cover is offered but
+     locked, rather than quietly hidden — the trade-off is the point. */
+  canAffordChoice(choice) {
+    const cost = (choice.fx && choice.fx.cash) || 0;
+    return cost >= 0 || this.cashOnHand() >= -cost;
+  }
+  answerLifeEvent(choiceIdx) {
+    const ev = this.pendingLifeEvent();
+    if (!ev) return null;
+    const choice = ev.choices[choiceIdx];
+    if (!choice || !this.canAffordChoice(choice)) return null;
+    const fx = choice.fx || {};
+    if (fx.cash) this.finances.seed = (this.finances.seed || 0) + fx.cash;
+    if (fx.fame) this.fame = clamp(this.fame + fx.fame, 0, 100);
+    if (fx.fatigue) this.user.fatigue = clamp(this.user.fatigue + fx.fatigue, 0, 100);
+    if (fx.form) this.user.form = clamp(this.user.form + fx.form, 0.92, 1.08);
+    for (const k in (fx.attrs || {})) {
+      this.user.attrs[k] = clamp(this.user.attrs[k] + fx.attrs[k], 40, 99);
+    }
+    this.life.seen.push(ev.id);
+    this.life.thisSeason++;
+    this.life.pending = null;
+    this.life.log.unshift({ year: this.year, stage: this.stage(), title: ev.title, choice: choice.label, outcome: choice.outcome });
+    this.life.log = this.life.log.slice(0, 60);
+    this.say(`${ev.title} — ${choice.label}.`, 'info');
+    return { ev, choice };
+  }
+
+  /* Fame is priced into a yearly endorsement cheque. It rises superlinearly,
+     so the gap between a known player and a famous one is enormous. */
+  endorsementIncome() { return Math.round(this.fame * this.fame * 450); }
 
   /* --- lifestyle: what prize money buys off the court --------------------
      cashOnHand is prize money minus what's been spent — career.prize itself
@@ -2839,7 +3431,9 @@ class Career {
       titles: c.titles, slams: c.slams, masters: c.masters, finals: c.finals,
       weeksNo1: c.weeksNo1, bestRank: c.bestRank, prize: c.prize,
       honours: this.honours.slice(),
-      tier: legacyTier(c, this.seasonsCompleted)
+      tier: legacyTier(c, this.seasonsCompleted),
+      fame: this.fame,
+      lifeLog: this.life.log.slice()
     };
     if (this.slot) Career.clear(this.slot);
     return summary;
@@ -2857,7 +3451,7 @@ class Career {
     });
     return {
       v: 3, seed: this.seed, year: this.year, startYear: this.startYear,
-      eraId: this.eraId, eraName: this.eraName,
+      eraId: this.eraId, eraName: this.eraName, fame: this.fame, life: this.life,
       routeId: this.routeId, routeName: this.routeName, wildcards: this.wildcards,
       seasonsCompleted: this.seasonsCompleted, eventIndex: this.eventIndex, week: this.week,
       messages: this.messages, seasonLog: this.seasonLog, honours: this.honours,
@@ -2865,7 +3459,7 @@ class Career {
       user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim),
       meta: {
         name: this.user.name, country: this.user.country, age: this.user.age,
-        year: this.year, era: this.eraName, route: this.routeName,
+        year: this.year, era: this.eraName, route: this.routeName, stage: this.stageInfo().name,
         ovr: overall(this.user), rank: this.user.rank || null,
         titles: this.user.career.titles, slams: this.user.career.slams,
         savedAt: Date.now()
@@ -2912,6 +3506,12 @@ class Career {
     c.eraId = d.eraId || '2026'; c.eraName = d.eraName || eraById(c.eraId).name;
     c.routeId = d.routeId || null; c.routeName = d.routeName || null;
     c.wildcards = d.wildcards || 0;
+    c.fame = d.fame || 0;
+    c.life = d.life || { seen: [], log: [], thisSeason: 0, pending: null };
+    if (!c.life.seen) c.life.seen = [];
+    if (!c.life.log) c.life.log = [];
+    if (c.life.thisSeason == null) c.life.thisSeason = 0;
+    if (c.life.pending === undefined) c.life.pending = null;
     c.eventIndex = d.eventIndex; c.week = d.week;
     c.messages = d.messages || []; c.seasonLog = d.seasonLog || []; c.honours = d.honours || [];
     c.entries = d.entries || {}; c.injuryWeeks = d.injuryWeeks || 0;
@@ -3368,7 +3968,9 @@ function renderHub() {
     <div>
       <div class="hh-name">${esc(u.name)}</div>
       <div class="hh-sub">${u.country} · ${u.age} yrs · OVR ${ovr} · ${career.year} season${career.eraName ? ` · ${esc(career.eraName)}` : ''}${career.wildcards ? ` · ${career.wildcards} wildcard${career.wildcards === 1 ? '' : 's'}` : ''}</div>
+      <div class="hh-stage">${stageTrackHTML(career.stage())}</div>
       <div class="hh-btnrow">
+        <button class="btn btn-ghost" id="btn-lifelog-now">Your life</button>
         <button class="btn btn-ghost hh-lifestyle" id="btn-lifestyle-now">Lifestyle</button>
         <button class="btn btn-ghost hh-retire" id="btn-retire-now">Retire</button>
       </div>
@@ -3380,6 +3982,7 @@ function renderHub() {
       <div class="hh-stat"><b>${u.career.titles}</b><span>Titles</span></div>
       <div class="hh-stat"><b>${u.career.slams}</b><span>Slams</span></div>
       <div class="hh-stat"><b>${fmtMoney(career.netWorth())}</b><span>Net worth</span></div>
+      <div class="hh-stat"><b>${career.fame}</b><span>Fame</span></div>
       <div class="hh-stat meter">
         <div class="meter-lab"><span>Form</span><span>${Math.round((u.form - 0.9) * 500)}%</span></div>
         <span class="bar-track"><span class="bar-fill fill-form" style="width:${Math.round((u.form - 0.9) * 500)}%"></span></span>
@@ -3404,6 +4007,7 @@ function renderHub() {
     .map(m => `<li class="${m.kind}">${esc(m.msg)}</li>`).join('') || '<li>Season not started.</li>';
   $('#btn-retire-now').addEventListener('click', doRetire);
   $('#btn-lifestyle-now').addEventListener('click', () => { renderLifestyle(); show('screen-lifestyle'); });
+  $('#btn-lifelog-now').addEventListener('click', () => { renderLifeLog(); show('screen-lifelog'); });
 }
 
 /* ---------- retirement ---------------------------------------------------- */
@@ -3426,8 +4030,17 @@ function renderRetirement(s) {
     ['Tour Finals', s.finals],
     ['Weeks at world No. 1', s.weeksNo1],
     ['Best ranking', '#' + s.bestRank],
-    ['Career prize money', '$' + (s.prize / 1e6).toFixed(1) + 'm']
+    ['Career prize money', '$' + (s.prize / 1e6).toFixed(1) + 'm'],
+    ['Fame at retirement', s.fame]
   ];
+  const life = (s.lifeLog || []).map(l => `<li class="ll-entry">
+      <span class="ll-year">${l.year}</span>
+      <div>
+        <b>${esc(l.title)}</b>
+        <span class="ll-choice">${esc(l.choice)}</span>
+        <span class="ll-outcome">${esc(l.outcome)}</span>
+      </div>
+    </li>`).reverse().join('');
   $('#retirement-body').innerHTML = `
     <div class="retire-hero">
       <div class="retire-name">${esc(s.name)} · retired at ${s.age}</div>
@@ -3439,6 +4052,8 @@ function renderRetirement(s) {
     ).join('')}</tbody></table>
     ${s.honours.length ? `<h3 style="margin:26px 0 6px;font-size:20px;text-transform:uppercase;letter-spacing:.06em">Honours</h3>
       <ul class="honours">${s.honours.map(h => `<li>${h.year} · ${esc(h.text)}</li>`).join('')}</ul>` : ''}
+    ${life ? `<h3 class="ll-head" style="margin:26px 0 10px">The life you lived</h3>
+      <ul class="ll-list">${life}</ul>` : ''}
     <div class="retire-actions"><button class="btn btn-primary btn-lg" id="btn-new-after-retire">Build a new player</button></div>`;
   $('#btn-new-after-retire').addEventListener('click', () => {
     career = null;
@@ -3707,6 +4322,9 @@ function showOtherResults(matches, meId) {
 function renderEventActions(out) {
   const c = career.current;
   const box = $('#ev-actions');
+  // the round reveal is animated, so the event can be closed underneath a
+  // still-running playRound; nothing to draw once that has happened
+  if (!c) { box.innerHTML = ''; return; }
   const backBtn = `<button class="btn btn-ghost" id="btn-back-hub">Back to the tour</button>`;
 
   if (c.phase === 'qual' && !c.qual.champion) {
@@ -3834,10 +4452,108 @@ function renderBracket() {
 
 function afterEvent() {
   career.closeEvent();
+  // life happens between tournaments, before the season can end
+  const life = career.rollLifeEvent();
   career.save();
+  if (life) { renderLifeEvent(); return; }
   if (career.seasonOver) { renderSeasonEnd(); show('screen-season-end'); return; }
   renderHub(); show('screen-hub');
 }
+
+/* ---------- the life ------------------------------------------------------
+   A stage track that shows where the career sits, and the decision cards that
+   land between tournaments.
+------------------------------------------------------------------------- */
+function stageTrackHTML(currentId) {
+  return `<ol class="stage-track">` + LIFE_STAGES.map(st => {
+    const done = LIFE_STAGES.findIndex(x => x.id === st.id) < LIFE_STAGES.findIndex(x => x.id === currentId);
+    const here = st.id === currentId;
+    return `<li class="stage-step ${here ? 'here' : ''} ${done ? 'done' : ''}" title="${esc(st.blurb)}">
+        <span class="stage-dot"></span>
+        <span class="stage-name">${esc(st.name)}</span>
+      </li>`;
+  }).join('') + `</ol>`;
+}
+
+/* One line per effect, in the same shape the rookie routes use. */
+function lifeFxHTML(fx) {
+  const bits = [];
+  if (fx.cash)    bits.push(`<span class="fx ${fx.cash > 0 ? 'up' : 'down'}"><b>${fx.cash > 0 ? '+' : '−'}${fmtMoney(Math.abs(fx.cash))}</b></span>`);
+  if (fx.fame)    bits.push(`<span class="fx ${fx.fame > 0 ? 'up' : 'down'}"><b>${fx.fame > 0 ? '+' : '−'}${Math.abs(fx.fame)}</b> fame</span>`);
+  if (fx.fatigue) bits.push(`<span class="fx ${fx.fatigue < 0 ? 'up' : 'down'}"><b>${fx.fatigue > 0 ? '+' : '−'}${Math.abs(fx.fatigue)}</b> fatigue</span>`);
+  if (fx.form)    bits.push(`<span class="fx ${fx.form > 0 ? 'up' : 'down'}"><b>${fx.form > 0 ? '+' : '−'}</b> form</span>`);
+  for (const k in (fx.attrs || {})) {
+    const v = fx.attrs[k];
+    const label = (ATTRS.find(a => a.key === k) || {}).label || k;
+    bits.push(`<span class="fx ${v > 0 ? 'up' : 'down'}"><b>${v > 0 ? '+' : '−'}${Math.abs(v)}</b> ${esc(label)}</span>`);
+  }
+  return bits.join('');
+}
+
+function renderLifeEvent() {
+  const ev = career.pendingLifeEvent();
+  if (!ev) { renderHub(); show('screen-hub'); return; }
+  const st = career.stageInfo();
+  $('#life-stage-tag').textContent = `${st.name} · ${career.year}`;
+  $('#life-title').textContent = ev.title;
+  $('#life-text').textContent = ev.text;
+  $('#life-outcome').hidden = true;
+  $('#life-choices').hidden = false;
+  $('#life-choices').innerHTML = ev.choices.map((c, i) => {
+    const ok = career.canAffordChoice(c);
+    return `<button class="life-choice" data-choice="${i}" ${ok ? '' : 'disabled'}>
+        <span class="lc-label">${esc(c.label)}</span>
+        <span class="lc-detail">${esc(c.detail || '')}</span>
+        <span class="lc-fx">${lifeFxHTML(c.fx || {})}</span>
+        ${ok ? '' : '<span class="lc-locked">You cannot afford this</span>'}
+      </button>`;
+  }).join('');
+  show('screen-life');
+}
+
+$('#life-choices').addEventListener('click', e => {
+  const b = e.target.closest('.life-choice');
+  if (!b || b.disabled) return;
+  const res = career.answerLifeEvent(parseInt(b.dataset.choice, 10));
+  if (!res) return;
+  career.save();
+  $('#life-choices').hidden = true;
+  $('#life-outcome').hidden = false;
+  $('#life-outcome-text').textContent = res.choice.outcome;
+  $('#life-fx').innerHTML = lifeFxHTML(res.choice.fx || {});
+});
+
+$('#btn-life-done').addEventListener('click', () => {
+  if (career.seasonOver) { renderSeasonEnd(); show('screen-season-end'); return; }
+  renderHub(); show('screen-hub');
+});
+
+function renderLifeLog() {
+  $('#lifelog-track').innerHTML = stageTrackHTML(career.stage()) +
+    `<p class="stage-blurb">${esc(career.stageInfo().blurb)}</p>`;
+  const log = career.life.log;
+  const honours = career.honours.slice(0, 12)
+    .map(h => `<li class="ll-honour"><span class="ll-year">${h.year}</span><span>${esc(h.text)}</span></li>`).join('');
+  $('#lifelog-body').innerHTML = `
+    <div class="ll-stats">
+      <div class="sum-tile"><b>${career.fame}</b><span>Fame</span></div>
+      <div class="sum-tile"><b>${fmtMoney(career.endorsementIncome())}</b><span>Endorsements / yr</span></div>
+      <div class="sum-tile"><b>${fmtMoney(career.netWorth())}</b><span>Net worth</span></div>
+      <div class="sum-tile"><b>${log.length}</b><span>Life decisions</span></div>
+    </div>
+    ${honours ? `<h3 class="ll-head">Honours</h3><ul class="ll-list">${honours}</ul>` : ''}
+    <h3 class="ll-head">Decisions</h3>
+    ${log.length ? `<ul class="ll-list">${log.map(l => `<li class="ll-entry">
+        <span class="ll-year">${l.year}</span>
+        <div>
+          <b>${esc(l.title)}</b>
+          <span class="ll-choice">${esc(l.choice)}</span>
+          <span class="ll-outcome">${esc(l.outcome)}</span>
+        </div>
+      </li>`).join('')}</ul>`
+      : `<p class="ll-empty">Nothing yet. Life happens between tournaments — keep playing.</p>`}`;
+}
+$('#btn-lifelog-back').addEventListener('click', () => { renderHub(); show('screen-hub'); });
 
 /* ---------- season end --------------------------------------------------- */
 let pendingSummary = null;

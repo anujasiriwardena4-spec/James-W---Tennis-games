@@ -439,7 +439,9 @@ function renderHub() {
     <div>
       <div class="hh-name">${esc(u.name)}</div>
       <div class="hh-sub">${u.country} · ${u.age} yrs · OVR ${ovr} · ${career.year} season${career.eraName ? ` · ${esc(career.eraName)}` : ''}${career.wildcards ? ` · ${career.wildcards} wildcard${career.wildcards === 1 ? '' : 's'}` : ''}</div>
+      <div class="hh-stage">${stageTrackHTML(career.stage())}</div>
       <div class="hh-btnrow">
+        <button class="btn btn-ghost" id="btn-lifelog-now">Your life</button>
         <button class="btn btn-ghost hh-lifestyle" id="btn-lifestyle-now">Lifestyle</button>
         <button class="btn btn-ghost hh-retire" id="btn-retire-now">Retire</button>
       </div>
@@ -451,6 +453,7 @@ function renderHub() {
       <div class="hh-stat"><b>${u.career.titles}</b><span>Titles</span></div>
       <div class="hh-stat"><b>${u.career.slams}</b><span>Slams</span></div>
       <div class="hh-stat"><b>${fmtMoney(career.netWorth())}</b><span>Net worth</span></div>
+      <div class="hh-stat"><b>${career.fame}</b><span>Fame</span></div>
       <div class="hh-stat meter">
         <div class="meter-lab"><span>Form</span><span>${Math.round((u.form - 0.9) * 500)}%</span></div>
         <span class="bar-track"><span class="bar-fill fill-form" style="width:${Math.round((u.form - 0.9) * 500)}%"></span></span>
@@ -475,6 +478,7 @@ function renderHub() {
     .map(m => `<li class="${m.kind}">${esc(m.msg)}</li>`).join('') || '<li>Season not started.</li>';
   $('#btn-retire-now').addEventListener('click', doRetire);
   $('#btn-lifestyle-now').addEventListener('click', () => { renderLifestyle(); show('screen-lifestyle'); });
+  $('#btn-lifelog-now').addEventListener('click', () => { renderLifeLog(); show('screen-lifelog'); });
 }
 
 /* ---------- retirement ---------------------------------------------------- */
@@ -497,8 +501,17 @@ function renderRetirement(s) {
     ['Tour Finals', s.finals],
     ['Weeks at world No. 1', s.weeksNo1],
     ['Best ranking', '#' + s.bestRank],
-    ['Career prize money', '$' + (s.prize / 1e6).toFixed(1) + 'm']
+    ['Career prize money', '$' + (s.prize / 1e6).toFixed(1) + 'm'],
+    ['Fame at retirement', s.fame]
   ];
+  const life = (s.lifeLog || []).map(l => `<li class="ll-entry">
+      <span class="ll-year">${l.year}</span>
+      <div>
+        <b>${esc(l.title)}</b>
+        <span class="ll-choice">${esc(l.choice)}</span>
+        <span class="ll-outcome">${esc(l.outcome)}</span>
+      </div>
+    </li>`).reverse().join('');
   $('#retirement-body').innerHTML = `
     <div class="retire-hero">
       <div class="retire-name">${esc(s.name)} · retired at ${s.age}</div>
@@ -510,6 +523,8 @@ function renderRetirement(s) {
     ).join('')}</tbody></table>
     ${s.honours.length ? `<h3 style="margin:26px 0 6px;font-size:20px;text-transform:uppercase;letter-spacing:.06em">Honours</h3>
       <ul class="honours">${s.honours.map(h => `<li>${h.year} · ${esc(h.text)}</li>`).join('')}</ul>` : ''}
+    ${life ? `<h3 class="ll-head" style="margin:26px 0 10px">The life you lived</h3>
+      <ul class="ll-list">${life}</ul>` : ''}
     <div class="retire-actions"><button class="btn btn-primary btn-lg" id="btn-new-after-retire">Build a new player</button></div>`;
   $('#btn-new-after-retire').addEventListener('click', () => {
     career = null;
@@ -778,6 +793,9 @@ function showOtherResults(matches, meId) {
 function renderEventActions(out) {
   const c = career.current;
   const box = $('#ev-actions');
+  // the round reveal is animated, so the event can be closed underneath a
+  // still-running playRound; nothing to draw once that has happened
+  if (!c) { box.innerHTML = ''; return; }
   const backBtn = `<button class="btn btn-ghost" id="btn-back-hub">Back to the tour</button>`;
 
   if (c.phase === 'qual' && !c.qual.champion) {
@@ -905,10 +923,108 @@ function renderBracket() {
 
 function afterEvent() {
   career.closeEvent();
+  // life happens between tournaments, before the season can end
+  const life = career.rollLifeEvent();
   career.save();
+  if (life) { renderLifeEvent(); return; }
   if (career.seasonOver) { renderSeasonEnd(); show('screen-season-end'); return; }
   renderHub(); show('screen-hub');
 }
+
+/* ---------- the life ------------------------------------------------------
+   A stage track that shows where the career sits, and the decision cards that
+   land between tournaments.
+------------------------------------------------------------------------- */
+function stageTrackHTML(currentId) {
+  return `<ol class="stage-track">` + LIFE_STAGES.map(st => {
+    const done = LIFE_STAGES.findIndex(x => x.id === st.id) < LIFE_STAGES.findIndex(x => x.id === currentId);
+    const here = st.id === currentId;
+    return `<li class="stage-step ${here ? 'here' : ''} ${done ? 'done' : ''}" title="${esc(st.blurb)}">
+        <span class="stage-dot"></span>
+        <span class="stage-name">${esc(st.name)}</span>
+      </li>`;
+  }).join('') + `</ol>`;
+}
+
+/* One line per effect, in the same shape the rookie routes use. */
+function lifeFxHTML(fx) {
+  const bits = [];
+  if (fx.cash)    bits.push(`<span class="fx ${fx.cash > 0 ? 'up' : 'down'}"><b>${fx.cash > 0 ? '+' : '−'}${fmtMoney(Math.abs(fx.cash))}</b></span>`);
+  if (fx.fame)    bits.push(`<span class="fx ${fx.fame > 0 ? 'up' : 'down'}"><b>${fx.fame > 0 ? '+' : '−'}${Math.abs(fx.fame)}</b> fame</span>`);
+  if (fx.fatigue) bits.push(`<span class="fx ${fx.fatigue < 0 ? 'up' : 'down'}"><b>${fx.fatigue > 0 ? '+' : '−'}${Math.abs(fx.fatigue)}</b> fatigue</span>`);
+  if (fx.form)    bits.push(`<span class="fx ${fx.form > 0 ? 'up' : 'down'}"><b>${fx.form > 0 ? '+' : '−'}</b> form</span>`);
+  for (const k in (fx.attrs || {})) {
+    const v = fx.attrs[k];
+    const label = (ATTRS.find(a => a.key === k) || {}).label || k;
+    bits.push(`<span class="fx ${v > 0 ? 'up' : 'down'}"><b>${v > 0 ? '+' : '−'}${Math.abs(v)}</b> ${esc(label)}</span>`);
+  }
+  return bits.join('');
+}
+
+function renderLifeEvent() {
+  const ev = career.pendingLifeEvent();
+  if (!ev) { renderHub(); show('screen-hub'); return; }
+  const st = career.stageInfo();
+  $('#life-stage-tag').textContent = `${st.name} · ${career.year}`;
+  $('#life-title').textContent = ev.title;
+  $('#life-text').textContent = ev.text;
+  $('#life-outcome').hidden = true;
+  $('#life-choices').hidden = false;
+  $('#life-choices').innerHTML = ev.choices.map((c, i) => {
+    const ok = career.canAffordChoice(c);
+    return `<button class="life-choice" data-choice="${i}" ${ok ? '' : 'disabled'}>
+        <span class="lc-label">${esc(c.label)}</span>
+        <span class="lc-detail">${esc(c.detail || '')}</span>
+        <span class="lc-fx">${lifeFxHTML(c.fx || {})}</span>
+        ${ok ? '' : '<span class="lc-locked">You cannot afford this</span>'}
+      </button>`;
+  }).join('');
+  show('screen-life');
+}
+
+$('#life-choices').addEventListener('click', e => {
+  const b = e.target.closest('.life-choice');
+  if (!b || b.disabled) return;
+  const res = career.answerLifeEvent(parseInt(b.dataset.choice, 10));
+  if (!res) return;
+  career.save();
+  $('#life-choices').hidden = true;
+  $('#life-outcome').hidden = false;
+  $('#life-outcome-text').textContent = res.choice.outcome;
+  $('#life-fx').innerHTML = lifeFxHTML(res.choice.fx || {});
+});
+
+$('#btn-life-done').addEventListener('click', () => {
+  if (career.seasonOver) { renderSeasonEnd(); show('screen-season-end'); return; }
+  renderHub(); show('screen-hub');
+});
+
+function renderLifeLog() {
+  $('#lifelog-track').innerHTML = stageTrackHTML(career.stage()) +
+    `<p class="stage-blurb">${esc(career.stageInfo().blurb)}</p>`;
+  const log = career.life.log;
+  const honours = career.honours.slice(0, 12)
+    .map(h => `<li class="ll-honour"><span class="ll-year">${h.year}</span><span>${esc(h.text)}</span></li>`).join('');
+  $('#lifelog-body').innerHTML = `
+    <div class="ll-stats">
+      <div class="sum-tile"><b>${career.fame}</b><span>Fame</span></div>
+      <div class="sum-tile"><b>${fmtMoney(career.endorsementIncome())}</b><span>Endorsements / yr</span></div>
+      <div class="sum-tile"><b>${fmtMoney(career.netWorth())}</b><span>Net worth</span></div>
+      <div class="sum-tile"><b>${log.length}</b><span>Life decisions</span></div>
+    </div>
+    ${honours ? `<h3 class="ll-head">Honours</h3><ul class="ll-list">${honours}</ul>` : ''}
+    <h3 class="ll-head">Decisions</h3>
+    ${log.length ? `<ul class="ll-list">${log.map(l => `<li class="ll-entry">
+        <span class="ll-year">${l.year}</span>
+        <div>
+          <b>${esc(l.title)}</b>
+          <span class="ll-choice">${esc(l.choice)}</span>
+          <span class="ll-outcome">${esc(l.outcome)}</span>
+        </div>
+      </li>`).join('')}</ul>`
+      : `<p class="ll-empty">Nothing yet. Life happens between tournaments — keep playing.</p>`}`;
+}
+$('#btn-lifelog-back').addEventListener('click', () => { renderHub(); show('screen-hub'); });
 
 /* ---------- season end --------------------------------------------------- */
 let pendingSummary = null;

@@ -4,6 +4,11 @@
    off-season, and the save file.
    ==========================================================================*/
 
+/* How often the life layer interrupts the tennis, and how much of it you can
+   live through in one season. Kept low deliberately — it is punctuation. */
+const LIFE_EVENT_CHANCE = 0.34;
+const LIFE_EVENTS_PER_SEASON = 3;
+
 const SAVE_PREFIX = 'baseline.career.slot';
 const SAVE_SLOTS = 3;
 function slotKey(slot) { return SAVE_PREFIX + slot + '.v1'; }
@@ -151,6 +156,12 @@ class Career {
     this.routeName = route ? route.name : null;
     // main-draw entries the route bought you — spent instead of qualifying
     this.wildcards = route ? (route.wildcards || 0) : 0;
+    // how well known you are, 0-100. Life events move it, titles move it, and
+    // it is what the end-of-season endorsement cheque is priced off.
+    this.fame = route ? (route.fame || 0) : 3;
+    // seen: life events already lived through, so none ever repeats
+    // pending: the event waiting to be answered, if any
+    this.life = { seen: [], log: [], thisSeason: 0, pending: null };
     this.year = opts.year || era.year;
     this.startYear = this.year;
     this.seasonsCompleted = 0;
@@ -356,7 +367,10 @@ class Career {
     champ.career.prize += money;
     const label = champ.isUser ? 'good' : 'info';
     this.say(`${champ.name} wins ${c.ev.name} (${c.ev.city}).`, label);
-    if (champ.isUser) this.honours.push({ year: this.year, text: `${c.ev.name} champion` });
+    if (champ.isUser) {
+      this.honours.push({ year: this.year, text: `${c.ev.name} champion` });
+      this.fame = clamp(this.fame + (c.ev.cat === 'gs' ? 9 : c.ev.cat === 'm1000' ? 4 : 2), 0, 100);
+    }
     const userWins = c.main.wins[this.user.id];
     if (userWins !== undefined) {
       const res = userWins >= c.main.totalRounds ? 'Champion' : c.main.roundName(userWins);
@@ -427,11 +441,29 @@ class Career {
       log: this.seasonLog.slice(),
       top10: table.slice(0, 10).map(r => ({ name: r.p.name, pts: r.pts, isUser: r.p.isUser }))
     };
-    if (no1.isUser) this.honours.push({ year: this.year, text: 'Year-end world No. 1' });
+    if (no1.isUser) {
+      this.honours.push({ year: this.year, text: 'Year-end world No. 1' });
+      this.fame = clamp(this.fame + 10, 0, 100);
+    }
+    // the year's endorsement cheque, priced off how well known you now are
+    const endorsements = this.endorsementIncome();
+    if (endorsements > 0) {
+      this.finances.seed = (this.finances.seed || 0) + endorsements;
+      this.say(`Endorsements paid ${Math.round(endorsements / 1000)}k for the year.`, 'good');
+    }
+    summary.fame = this.fame;
+    summary.endorsements = endorsements;
+    summary.stage = this.stageInfo().name;
     return summary;
   }
 
   newSeason(trainingSpend) {
+    // fame fades unless the results keep renewing it — a year outside the top
+    // 100 costs you far more of it than a year at the top
+    const earned = this.user.rank <= 5 ? 26 : this.user.rank <= 20 ? 16
+                 : this.user.rank <= 50 ? 8 : this.user.rank <= 100 ? 3 : 0;
+    this.fame = clamp(Math.round(this.fame * 0.88 + earned * 0.12), 0, 100);
+    this.life.thisSeason = 0;
     this.players.forEach(p => {
       p.prev = Object.assign({}, p.prev, p.res);
       p.res = {};
@@ -462,6 +494,74 @@ class Career {
     const bonus = teamTier != null ? (LIFESTYLE_CATALOG.team[teamTier].trainingBonus || 0) : 0;
     return base + bonus;
   }
+
+  /* --- the life ----------------------------------------------------------
+     Where the career sits on the ladder, and the events that reach you there.
+     Stage is derived rather than stored, so it tracks the career on its own
+     as the ranking and the birthdays move. */
+  stageContext() {
+    return {
+      age: this.user.age,
+      seasons: this.seasonsCompleted,
+      rank: this.user.rank || 999,
+      slams: this.user.career.slams || 0
+    };
+  }
+  stage() { return stageFor(this.stageContext()); }
+  stageInfo() { const id = this.stage(); return LIFE_STAGES.find(s => s.id === id) || LIFE_STAGES[0]; }
+
+  /* Which events could still reach you where you are now. */
+  eligibleLifeEvents() {
+    const st = this.stage();
+    return LIFE_EVENTS.filter(e => e.stages.indexOf(st) >= 0 && this.life.seen.indexOf(e.id) < 0);
+  }
+
+  /* Rolled after a tournament closes. Capped per season so the life layer
+     stays punctuation rather than the main text. */
+  rollLifeEvent() {
+    if (this.life.pending) return this.life.pending;
+    if (this.life.thisSeason >= LIFE_EVENTS_PER_SEASON) return null;
+    if (this.injuryWeeks > 0) return null;
+    if (rnd() > LIFE_EVENT_CHANCE) return null;
+    const pool = this.eligibleLifeEvents();
+    if (!pool.length) return null;
+    this.life.pending = pick(pool).id;
+    return this.life.pending;
+  }
+  pendingLifeEvent() {
+    return this.life.pending ? LIFE_EVENTS.find(e => e.id === this.life.pending) || null : null;
+  }
+  /* Can this choice be paid for? A cost you cannot cover is offered but
+     locked, rather than quietly hidden — the trade-off is the point. */
+  canAffordChoice(choice) {
+    const cost = (choice.fx && choice.fx.cash) || 0;
+    return cost >= 0 || this.cashOnHand() >= -cost;
+  }
+  answerLifeEvent(choiceIdx) {
+    const ev = this.pendingLifeEvent();
+    if (!ev) return null;
+    const choice = ev.choices[choiceIdx];
+    if (!choice || !this.canAffordChoice(choice)) return null;
+    const fx = choice.fx || {};
+    if (fx.cash) this.finances.seed = (this.finances.seed || 0) + fx.cash;
+    if (fx.fame) this.fame = clamp(this.fame + fx.fame, 0, 100);
+    if (fx.fatigue) this.user.fatigue = clamp(this.user.fatigue + fx.fatigue, 0, 100);
+    if (fx.form) this.user.form = clamp(this.user.form + fx.form, 0.92, 1.08);
+    for (const k in (fx.attrs || {})) {
+      this.user.attrs[k] = clamp(this.user.attrs[k] + fx.attrs[k], 40, 99);
+    }
+    this.life.seen.push(ev.id);
+    this.life.thisSeason++;
+    this.life.pending = null;
+    this.life.log.unshift({ year: this.year, stage: this.stage(), title: ev.title, choice: choice.label, outcome: choice.outcome });
+    this.life.log = this.life.log.slice(0, 60);
+    this.say(`${ev.title} — ${choice.label}.`, 'info');
+    return { ev, choice };
+  }
+
+  /* Fame is priced into a yearly endorsement cheque. It rises superlinearly,
+     so the gap between a known player and a famous one is enormous. */
+  endorsementIncome() { return Math.round(this.fame * this.fame * 450); }
 
   /* --- lifestyle: what prize money buys off the court --------------------
      cashOnHand is prize money minus what's been spent — career.prize itself
@@ -510,7 +610,9 @@ class Career {
       titles: c.titles, slams: c.slams, masters: c.masters, finals: c.finals,
       weeksNo1: c.weeksNo1, bestRank: c.bestRank, prize: c.prize,
       honours: this.honours.slice(),
-      tier: legacyTier(c, this.seasonsCompleted)
+      tier: legacyTier(c, this.seasonsCompleted),
+      fame: this.fame,
+      lifeLog: this.life.log.slice()
     };
     if (this.slot) Career.clear(this.slot);
     return summary;
@@ -528,7 +630,7 @@ class Career {
     });
     return {
       v: 3, seed: this.seed, year: this.year, startYear: this.startYear,
-      eraId: this.eraId, eraName: this.eraName,
+      eraId: this.eraId, eraName: this.eraName, fame: this.fame, life: this.life,
       routeId: this.routeId, routeName: this.routeName, wildcards: this.wildcards,
       seasonsCompleted: this.seasonsCompleted, eventIndex: this.eventIndex, week: this.week,
       messages: this.messages, seasonLog: this.seasonLog, honours: this.honours,
@@ -536,7 +638,7 @@ class Career {
       user: slim(this.user), tour: this.tour.map(slim), field: this.field.map(slim),
       meta: {
         name: this.user.name, country: this.user.country, age: this.user.age,
-        year: this.year, era: this.eraName, route: this.routeName,
+        year: this.year, era: this.eraName, route: this.routeName, stage: this.stageInfo().name,
         ovr: overall(this.user), rank: this.user.rank || null,
         titles: this.user.career.titles, slams: this.user.career.slams,
         savedAt: Date.now()
@@ -583,6 +685,12 @@ class Career {
     c.eraId = d.eraId || '2026'; c.eraName = d.eraName || eraById(c.eraId).name;
     c.routeId = d.routeId || null; c.routeName = d.routeName || null;
     c.wildcards = d.wildcards || 0;
+    c.fame = d.fame || 0;
+    c.life = d.life || { seen: [], log: [], thisSeason: 0, pending: null };
+    if (!c.life.seen) c.life.seen = [];
+    if (!c.life.log) c.life.log = [];
+    if (c.life.thisSeason == null) c.life.thisSeason = 0;
+    if (c.life.pending === undefined) c.life.pending = null;
     c.eventIndex = d.eventIndex; c.week = d.week;
     c.messages = d.messages || []; c.seasonLog = d.seasonLog || []; c.honours = d.honours || [];
     c.entries = d.entries || {}; c.injuryWeeks = d.injuryWeeks || 0;
@@ -598,4 +706,5 @@ class Career {
   }
 }
 
-if (typeof module !== 'undefined') { module.exports = { Builder, RookieSpinner, applyRouteBonus, Career, SAVE_SLOTS }; }
+if (typeof module !== 'undefined') { module.exports = { Builder, RookieSpinner, applyRouteBonus, Career, SAVE_SLOTS,
+  LIFE_EVENT_CHANCE, LIFE_EVENTS_PER_SEASON }; }
